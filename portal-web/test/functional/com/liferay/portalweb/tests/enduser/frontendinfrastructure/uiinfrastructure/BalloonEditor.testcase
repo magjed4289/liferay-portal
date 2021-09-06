@@ -1,0 +1,47 @@
+@component-name = "portal-frontend-infrastructure"
+definition {
+
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "User Interface";
+	property portal.acceptance = "true";
+	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
+	
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			PortalInstances.tearDownCP();
+
+			Page.tearDownCP();
+		}
+	}
+
+	@description = "FirstTest"
+	@priority = "5"
+	@refactorneeded
+	test firstTest {
+		ProductMenu.gotoPortlet(
+				category = "Site Builder",
+				portlet = "Pages");
+
+		SitePages.addPublicPage(pageName = "My Widget Page");
+
+		//ProductMenu.gotoPortlet(
+		//		category = "Site Builder",
+		//		portlet = "Pages");
+
+		Navigator.gotoPage(pageName = "My Widget Page");
+
+		Pause(locator1 = "4000");
+	}
+}
