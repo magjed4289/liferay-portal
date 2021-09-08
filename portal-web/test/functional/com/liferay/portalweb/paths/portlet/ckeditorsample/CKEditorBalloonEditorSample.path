@@ -28,7 +28,7 @@
 					<td></td>
 				</tr>
 				<tr>
-					<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLETED_LIST</td>
+					<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLET_LIST</td>
 					<td>//div[(@class='portlet-body')]//ul/li[contains(text(),'${key_textName}')]</td>
 					<td></td>
 				</tr>
