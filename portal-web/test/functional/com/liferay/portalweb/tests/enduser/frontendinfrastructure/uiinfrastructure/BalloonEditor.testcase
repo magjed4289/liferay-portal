@@ -5,12 +5,23 @@ definition {
 	property portal.upstream = "true";
 	property testray.main.component.name = "User Interface";
 	property portal.acceptance = "true";
-	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
-	
+
 	setUp {
+		FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
+
+		AssertConsoleTextPresent(value1 = "STARTED com.liferay.frontend.editor.ckeditor.sample.web_");
+
 		TestCase.setUpPortalInstance();
 
 		User.firstLoginPG();
+
+		JSONLayout.addPublicLayout(
+				groupName = "Guest",
+				layoutName = "My Widget Page");
+
+		Navigator.gotoPage(pageName = "My Widget Page");
+
+		Portlet.addPG(portletName = "CKEditor Sample");
 	}
 
 	tearDown {
@@ -21,27 +32,100 @@ definition {
 		}
 		else {
 			PortalInstances.tearDownCP();
-
 			Page.tearDownCP();
 		}
 	}
 
-	@description = "FirstTest"
+	@description = "Assert text edit function (bold, italic, underline, numbered/bulleted list, block styles)"
 	@priority = "5"
 	@refactorneeded
-	test firstTest {
-		ProductMenu.gotoPortlet(
-				category = "Site Builder",
-				portlet = "Pages");
+	test BalloonToolbarTextEditOptions {
+		var paragraphText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Nunc id cursus metus aliquam eleifend mi in nulla. Quam adipiscing vitae proin sagittis nisl rhoncus. Suspendisse faucibus interdum posuere lorem. Nullam ac tortor vitae purus faucibus ornare. Ac felis donec et odio pellentesque diam. Nulla at volutpat diam ut. Posuere urna nec tincidunt praesent semper feugiat nibh. Gravida quis blandit turpis cursus. Proin libero nunc consequat interdum varius. Sollicitudin ac orci phasellus egestas tellus rutrum tellus pellentesque. Neque volutpat ac tincidunt vitae semper quis lectus nulla at. Odio euismod lacinia at quis risus sed vulputate odio ut. Augue lacus viverra vitae congue eu consequat ac. Elementum sagittis vitae et leo duis ut diam. Diam quis enim lobortis scelerisque fermentum dui faucibus.";
 
-		SitePages.addPublicPage(pageName = "My Widget Page");
+		task("Check that text can be bold") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
+			AssertElementPresent(
+					key_textName = "${paragraphText}",
+					locator1 =
+							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BOLD");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
+		}
 
-		//ProductMenu.gotoPortlet(
-		//		category = "Site Builder",
-		//		portlet = "Pages");
+		task("Check that text can be italic") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Italic");
+			AssertElementPresent(
+					key_textName = "${paragraphText}",
+					locator1 =
+							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_ITALIC");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Italic");
+		}
 
-		Navigator.gotoPage(pageName = "My Widget Page");
+		task("Check that text can be underlined") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Underline");
+			AssertElementPresent(
+					key_textName = "${paragraphText}",
+					locator1 =
+							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_UNDERLINE");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Underline");
+		}
 
-		Pause(locator1 = "4000");
+		task("Check that text can be listed with bullets") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Bulleted");
+			AssertElementPresent(
+					key_textName = "${paragraphText}",
+					locator1 =
+							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLETED_LIST");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Bulleted");
+		}
+
+		task("Check that text can be listed with numbers") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Numbered");
+			AssertTextEquals(
+					locator1 =
+							"CKEditorBalloonEditorSample#PARAGRAPH_CONTENT_NUMBERED_LIST",
+					value1 = "${paragraphText}");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Numbered");
+		}
+
+		task("Check that text can be centered") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Center");
+			AssertAttributeValue(
+					attribute1 = "style",
+					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
+					value1 = "text-align: center;");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Center");
+		}
+
+		task("Check that text can be aligned right") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Align Right");
+			AssertAttributeValue(
+					attribute1 = "style",
+					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
+					value1 = "text-align: right;");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Align Right");
+		}
+
+		task("Check that text can be justified") {
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Justify");
+			AssertAttributeValue(
+					attribute1 = "style",
+					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
+					value1 = "text-align: justify;");
+			BalloonEditor.toggleBalloonEditorContentStyle(
+					optionTool = "Justify");
+		}
 	}
 }
