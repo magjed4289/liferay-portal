@@ -1,0 +1,14 @@
+definition {
+
+	macro toggleBalloonEditorContentStyle {
+		TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+
+		WaitForElementPresent(
+				key_titleName = "${optionTool}",
+				locator1 = "CKEditorBalloonEditorSample#TOOLBAR_ANY_ITEM_BUTTON");
+
+		Click(
+				key_titleName = "${optionTool}",
+				locator1 = "CKEditorBalloonEditorSample#TOOLBAR_ANY_ITEM_BUTTON");
+	}
+}
