@@ -1,10 +1,10 @@
 @component-name = "portal-frontend-infrastructure"
 definition {
 
+	property portal.acceptance = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "User Interface";
-	property portal.acceptance = "true";
 
 	setUp {
 		FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
@@ -16,8 +16,8 @@ definition {
 		User.firstLoginPG();
 
 		JSONLayout.addPublicLayout(
-				groupName = "Guest",
-				layoutName = "My Widget Page");
+			groupName = "Guest",
+			layoutName = "My Widget Page");
 
 		Navigator.gotoPage(pageName = "My Widget Page");
 
@@ -42,90 +42,65 @@ definition {
 	test BalloonToolbarTextEditOptions {
 		var paragraphText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Nunc id cursus metus aliquam eleifend mi in nulla. Quam adipiscing vitae proin sagittis nisl rhoncus. Suspendisse faucibus interdum posuere lorem. Nullam ac tortor vitae purus faucibus ornare. Ac felis donec et odio pellentesque diam. Nulla at volutpat diam ut. Posuere urna nec tincidunt praesent semper feugiat nibh. Gravida quis blandit turpis cursus. Proin libero nunc consequat interdum varius. Sollicitudin ac orci phasellus egestas tellus rutrum tellus pellentesque. Neque volutpat ac tincidunt vitae semper quis lectus nulla at. Odio euismod lacinia at quis risus sed vulputate odio ut. Augue lacus viverra vitae congue eu consequat ac. Elementum sagittis vitae et leo duis ut diam. Diam quis enim lobortis scelerisque fermentum dui faucibus.";
 
-		task("Check that text can be bold") {
+		task ("Check that text can be bold") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
-			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 =
-							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BOLD");
+			AssertElementPresent(key_textName = "${paragraphText}");
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
 		}
 
-		task("Check that text can be italic") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Italic");
-			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 =
-							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_ITALIC");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Italic");
+		task ("Check that text can be italic") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Italic");
+			AssertElementPresent(key_textName = "${paragraphText}");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Italic");
 		}
 
-		task("Check that text can be underlined") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Underline");
-			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 =
-							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_UNDERLINE");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Underline");
+		task ("Check that text can be underlined") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Underline");
+			AssertElementPresent(key_textName = "${paragraphText}");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Underline");
 		}
 
-		task("Check that text can be listed with bullets") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Bulleted");
-			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 =
-							"CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLETED_LIST");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Bulleted");
+		task ("Check that text can be listed with bullets") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bulleted");
+			AssertElementPresent(key_textName = "${paragraphText}");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bulleted");
 		}
 
-		task("Check that text can be listed with numbers") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Numbered");
+		task ("Check that text can be listed with numbers") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Numbered");
 			AssertTextEquals(
-					locator1 =
-							"CKEditorBalloonEditorSample#PARAGRAPH_CONTENT_NUMBERED_LIST",
-					value1 = "${paragraphText}");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Numbered");
+				locator1 =
+				"CKEditorBalloonEditorSample#PARAGRAPH_CONTENT_NUMBERED_LIST",
+				value1 = "${paragraphText}");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Numbered");
 		}
 
-		task("Check that text can be centered") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Center");
+		task ("Check that text can be centered") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Center");
 			AssertAttributeValue(
-					attribute1 = "style",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
-					value1 = "text-align: center;");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Center");
+				attribute1 = "style",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
+				value1 = "text-align: center;");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Center");
 		}
 
-		task("Check that text can be aligned right") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Align Right");
+		task ("Check that text can be aligned right") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Align Right");
 			AssertAttributeValue(
-					attribute1 = "style",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
-					value1 = "text-align: right;");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Align Right");
+				attribute1 = "style",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
+				value1 = "text-align: right;");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Align Right");
 		}
 
-		task("Check that text can be justified") {
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Justify");
+		task ("Check that text can be justified") {
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Justify");
 			AssertAttributeValue(
-					attribute1 = "style",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
-					value1 = "text-align: justify;");
-			BalloonEditor.toggleBalloonEditorContentStyle(
-					optionTool = "Justify");
+				attribute1 = "style",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
+				value1 = "text-align: justify;");
+			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Justify");
 		}
 	}
+
 }
