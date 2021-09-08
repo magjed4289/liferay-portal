@@ -1,0 +1,13 @@
+{
+    "css": {
+        "codemirror": [
+            "lib/codemirror.css"
+        ]
+    },
+    "js": {
+        "codemirror": [
+            "lib/codemirror.js",
+            "mode/xml/xml.js"
+        ]
+    }
+}

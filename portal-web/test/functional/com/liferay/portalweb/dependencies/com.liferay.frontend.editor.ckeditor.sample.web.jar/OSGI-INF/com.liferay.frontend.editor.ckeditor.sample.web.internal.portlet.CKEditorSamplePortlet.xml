@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" name="com.liferay.frontend.editor.ckeditor.sample.web.internal.portlet.CKEditorSamplePortlet" immediate="true">
+  <property name="javax.portlet.expiration-cache" type="String" value="0"/>
+  <property name="com.liferay.portlet.render-weight" type="String" value="50"/>
+  <property name="javax.portlet.security-role-ref" type="String" value="power-user,user"/>
+  <property name="javax.portlet.init-param.template-path" type="String" value="/META-INF/resources/"/>
+  <property name="com.liferay.portlet.private-session-attributes" type="String" value="false"/>
+  <property name="com.liferay.portlet.css-class-wrapper" type="String" value="portlet-ckeditor-sample"/>
+  <property name="com.liferay.portlet.display-category" type="String" value="category.sample"/>
+  <property name="javax.portlet.init-param.view-template" type="String" value="/view.jsp"/>
+  <property name="com.liferay.portlet.private-request-attributes" type="String" value="false"/>
+  <property name="javax.portlet.resource-bundle" type="String" value="content.Language"/>
+  <property name="com.liferay.portlet.layout-cacheable" type="String" value="true"/>
+  <property name="javax.portlet.name" type="String" value="com_liferay_editor_ckeditor_sample_web_internal_portlet_CKEditorSamplePortlet"/>
+  <property name="com.liferay.portlet.instanceable" type="String" value="true"/>
+  <property name="com.liferay.portlet.use-default-template" type="String" value="true"/>
+  <property name="javax.portlet.display-name" type="String" value="CKEditor Sample"/>
+  <service>
+    <provide interface="javax.portlet.Portlet"/>
+  </service>
+  <implementation class="com.liferay.frontend.editor.ckeditor.sample.web.internal.portlet.CKEditorSamplePortlet"/>
+</scr:component>
