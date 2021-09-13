@@ -1,16 +1,16 @@
 @component-name = "portal-frontend-infrastructure"
 definition {
 
+	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
 	property portal.acceptance = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "User Interface";
-	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
 
 	setUp {
-	FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
+		FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
 
-	AssertConsoleTextPresent(value1 = "STARTED com.liferay.frontend.editor.ckeditor.sample.web_");
+		AssertConsoleTextPresent(value1 = "STARTED com.liferay.frontend.editor.ckeditor.sample.web_");
 
 		TestCase.setUpPortalInstance();
 
@@ -53,8 +53,8 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
 
 			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+				key_textName = "${paragraphText}",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
 
 		task ("Check that text can be italicized") {
@@ -67,8 +67,8 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Italic");
 
 			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+				key_textName = "${paragraphText}",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
 
 		task ("Check that text can be underlined") {
@@ -81,8 +81,8 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Underline");
 
 			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+				key_textName = "${paragraphText}",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
 
 		task ("Check that text can be listed with bullets") {
@@ -95,8 +95,8 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bulleted");
 
 			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+				key_textName = "${paragraphText}",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
 
 		task ("Check that text can be listed with numbers") {
@@ -110,8 +110,8 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Numbered");
 
 			AssertElementPresent(
-					key_textName = "${paragraphText}",
-					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+				key_textName = "${paragraphText}",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
 
 		task ("Check that text can be centered") {
@@ -141,4 +141,5 @@ definition {
 				value1 = "text-align: justify;");
 		}
 	}
+
 }
