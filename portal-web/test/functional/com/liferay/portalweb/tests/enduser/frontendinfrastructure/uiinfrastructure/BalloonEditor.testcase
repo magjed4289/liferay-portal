@@ -1,11 +1,11 @@
 @component-name = "portal-frontend-infrastructure"
 definition {
 
+	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
 	property portal.acceptance = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "User Interface";
-	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
 
 	setUp {
 		FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
@@ -145,7 +145,6 @@ definition {
 	@description = "Assert toolbar with hyperlink icon is present"
 	@priority = "4"
 	test CanManageHyperlink {
-
 		task ("Click the hyperlinked text") {
 			Click(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
@@ -168,4 +167,5 @@ definition {
 			AssertElementNotPresent(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
 	}
+
 }
