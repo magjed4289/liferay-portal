@@ -44,71 +44,86 @@ definition {
 
 		task ("Check that text can be bolded") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
+
 			AssertElementPresent(
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BOLD");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bold");
 		}
 
 		task ("Check that text can be italicized") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Italic");
+
 			AssertElementPresent(
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_ITALIC");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Italic");
 		}
 
 		task ("Check that text can be underlined") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Underline");
+
 			AssertElementPresent(
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_UNDERLINE");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Underline");
 		}
 
 		task ("Check that text can be listed with bullets") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bulleted");
+
 			AssertElementPresent(
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLET_LIST");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Bulleted");
 		}
 
 		task ("Check that text can be listed with numbers") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Numbered");
+
 			AssertTextEquals(
 				locator1 =
 				"CKEditorBalloonEditorSample#PARAGRAPH_CONTENT_NUMBERED_LIST",
 				value1 = "${paragraphText}");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Numbered");
 		}
 
 		task ("Check that text can be centered") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Center");
+
 			AssertAttributeValue(
 				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				value1 = "text-align: center;");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Center");
 		}
 
 		task ("Check that text can be aligned right") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Align Right");
+
 			AssertAttributeValue(
 				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				value1 = "text-align: right;");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Align Right");
 		}
 
 		task ("Check that text can be justified") {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Justify");
+
 			AssertAttributeValue(
 				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				value1 = "text-align: justify;");
+
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Justify");
 		}
 	}
-
 }
