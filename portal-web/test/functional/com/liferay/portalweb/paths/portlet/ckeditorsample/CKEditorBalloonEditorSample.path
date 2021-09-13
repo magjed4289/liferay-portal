@@ -1,53 +1,53 @@
 <html>
-	<head>
-		<title>CKEditorBalloonEditorSample</title>
-	</head>
+<head>
+<title>CKEditorBalloonEditorSample</title>
+</head>
 
-	<body>
-		<table border="1" cellpadding="1" cellspacing="1">
-			<thead>
-				<tr><td rowspan="1" colspan="3">CKEditorBalloonEditorSample</td></tr>
-			</thead>
+<body>
+<table border="1" cellpadding="1" cellspacing="1">
+<thead>
+	<tr><td rowspan="1" colspan="3">CKEditorBalloonEditorSample</td></tr>
+</thead>
 
-			<tbody>
-			<!--TOOLBAR_ELEMENTS-->
-				<tr>
-					<td>TOOLBAR_ANY_ITEM_BUTTON</td>
-					<td>//a[contains(@href,"${key_titleName}")]</td>
-					<td></td>
-				</tr>
-			<!--PARAGRAPH-->
-				<tr>
-					<td>BODY_TEXT</td>
-					<td>//div[@class='portlet-body']/div/div/p[1]</td>
-					<td></td>
-				</tr>
-				<tr>
-					<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BOLD</td>
-					<td>//div[(@class='portlet-body')]//p//strong[contains(text(),'${key_textName}')]</td>
-					<td></td>
-				</tr>
-				<tr>
-					<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLET_LIST</td>
-					<td>//div[(@class='portlet-body')]//ul/li[contains(text(),'${key_textName}')]</td>
-					<td></td>
-				</tr>
-				<tr>
-					<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_ITALIC</td>
-					<td>//div[(@class='portlet-body')]//p//em[contains(text(),'${key_textName}')]</td>
-					<td></td>
-				</tr>
-				<tr>
-					<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_UNDERLINE</td>
-					<td>//div[(@class='portlet-body')]//p//u[contains(text(),'${key_textName}')]</td>
-					<td></td>
-				</tr>
-				<tr>
-					<td>PARAGRAPH_CONTENT_NUMBERED_LIST</td>
-					<td>//div[(@class='portlet-body')]//ol/li</td>
-					<td></td>
-				</tr>
-			</tbody>
-		</table>
-	</body>
+<tbody>
+<!--TOOLBAR_ELEMENTS-->
+<tr>
+	<td>TOOLBAR_ANY_ITEM_BUTTON</td>
+	<td>//a[contains(@href,"${key_titleName}")]</td>
+	<td></td>
+</tr>
+<!--PARAGRAPH-->
+<tr>
+	<td>BODY_TEXT</td>
+	<td>//div[@class='portlet-body']/div/div/p[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BOLD</td>
+	<td>//div[(@class='portlet-body')]//p//strong[contains(text(),'${key_textName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_BULLET_LIST</td>
+	<td>//div[(@class='portlet-body')]//ul/li[contains(text(),'${key_textName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_ITALIC</td>
+	<td>//div[(@class='portlet-body')]//p//em[contains(text(),'${key_textName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PARAGRAPH_ASSERT_BODY_TEXT_CONTENT_UNDERLINE</td>
+	<td>//div[(@class='portlet-body')]//p//u[contains(text(),'${key_textName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PARAGRAPH_CONTENT_NUMBERED_LIST</td>
+	<td>//div[(@class='portlet-body')]//ol/li</td>
+	<td></td>
+</tr>
+</tbody>
+</table>
+</body>
 </html>
