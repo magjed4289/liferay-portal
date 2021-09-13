@@ -10,6 +10,32 @@
 </thead>
 
 <tbody>
+<!--HYPERLINK_TOOLBAR_ELEMENTS-->
+<tr>
+	<td>HYPERLINK_UNLINK</td>
+	<td>//div[@class='cke_balloon_content']//a[@title='Unlink']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>HYPERLINK_TARGET</td>
+	<td>//select[contains(@class,'ui-select') and contains(@name,'Target')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>HYPERLINK_TEXT_INPUT</td>
+	<td>//input[contains(@class,'ui-textinput') and contains(@placeholder,'Link')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>HYPERLINK_BROWSE_SRVR_BTN</td>
+	<td>//a[contains(@class,'cke_button') and contains(@title,'Browse Server')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>HYPERLINK_CHK_BTN</td>
+	<td>//a[contains(@class,'cke_button')]//span[contains(@class,'check_icon')]</td>
+	<td></td>
+</tr>
 <!--TOOLBAR_ELEMENTS-->
 <tr>
 	<td>TOOLBAR_ANY_ITEM_BUTTON</td>
@@ -20,6 +46,11 @@
 <tr>
 	<td>BODY_TEXT</td>
 	<td>//div[@class='portlet-body']/div/div/p[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>BODY_TEXT_HYPERLINK</td>
+	<td>//div[@class='portlet-body']/div/div/p[2]/a</td>
 	<td></td>
 </tr>
 <tr>
