@@ -5,11 +5,12 @@ definition {
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "User Interface";
+	property osgi.modules.includes = "frontend-editor-ckeditor-sample-web";
 
 	setUp {
-		FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
+	FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
 
-		AssertConsoleTextPresent(value1 = "STARTED com.liferay.frontend.editor.ckeditor.sample.web_");
+	AssertConsoleTextPresent(value1 = "STARTED com.liferay.frontend.editor.ckeditor.sample.web_");
 
 		TestCase.setUpPortalInstance();
 
