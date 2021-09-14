@@ -158,7 +158,7 @@ definition {
 
 			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#HYPERLINK_BROWSE_SRVR_BTN");
 
-			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#HYPERLINK_CHK_BTN");
+			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#CHK_BTN");
 		}
 
 		task ("Unlink") {
@@ -167,6 +167,28 @@ definition {
 			Click(locator1 = "CKEditorBalloonEditorSample#HYPERLINK_UNLINK");
 
 			AssertElementNotPresent(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+		}
+	}
+
+	@description = "Assert table option enabled in the toolbar"
+	@priority = "4"
+	test CanManageTable {
+		task("Clean the paragraph") {
+			TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+
+			KeyPress(
+					locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK",
+					value1 = "\BACK_SPACE");
+		}
+
+		task("Add table") {
+			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
+
+			Click(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
+
+			Click(locator1 = "CKEditorBalloonEditorSample#INSERT_TABLE_BTN");
+
+			Click(locator1 = "CKEditorBalloonEditorSample#CHK_BTN");
 		}
 	}
 }
