@@ -33,7 +33,7 @@
 </tr>
 <tr>
 	<td>HYPERLINK_UNLINK</td>
-	<td>//div[@class='cke_balloon_content']//a[@title='Unlink']</td>
+	<td>//div[contains(@class, 'cke_balloontoolbar')]//div[@class='cke_balloon_content']//span[contains(@class,'unlink_icon')]</td>
 	<td></td>
 </tr>
 <!--TOOLBAR_ELEMENTS-->

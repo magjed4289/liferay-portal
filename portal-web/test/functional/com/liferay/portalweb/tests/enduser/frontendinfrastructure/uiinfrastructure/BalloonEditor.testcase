@@ -162,10 +162,11 @@ definition {
 		}
 
 		task ("Unlink") {
+			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#HYPERLINK_UNLINK");
+
 			Click(locator1 = "CKEditorBalloonEditorSample#HYPERLINK_UNLINK");
 
 			AssertElementNotPresent(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
 	}
-
 }
