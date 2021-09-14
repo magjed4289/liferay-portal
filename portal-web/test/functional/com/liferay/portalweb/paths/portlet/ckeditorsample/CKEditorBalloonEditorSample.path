@@ -17,11 +17,6 @@
 	<td></td>
 </tr>
 <tr>
-	<td>HYPERLINK_CHK_BTN</td>
-	<td>//a[contains(@class,'cke_button')]//span[contains(@class,'check_icon')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>HYPERLINK_TARGET</td>
 	<td>//select[contains(@class,'ui-select') and contains(@name,'Target')]</td>
 	<td></td>
@@ -40,6 +35,21 @@
 <tr>
 	<td>TOOLBAR_ANY_ITEM_BUTTON</td>
 	<td>//a[contains(@href,"${key_titleName}")]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>CHK_BTN</td>
+	<td>//a[contains(@class,'cke_button')]//span[contains(@class,'check_icon')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>INSERT_BTN</td>
+	<td>//button[contains(@class,'lfr-balloon-editor-insert-button')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>INSERT_TABLE_BTN</td>
+	<td>//div[contains(@class, 'cke_balloontoolbar')]//div[@class='cke_balloon_content']//span[contains(@class,'cke_button__table_icon')]</td>
 	<td></td>
 </tr>
 <!--PARAGRAPH-->
