@@ -8,10 +8,6 @@ definition {
 	property testray.main.component.name = "User Interface";
 
 	setUp {
-		FileInstall.deployFileOnServer(liferayDependencyJars = "com.liferay.frontend.editor.ckeditor.sample.web.jar");
-
-		AssertConsoleTextPresent(value1 = "STARTED com.liferay.frontend.editor.ckeditor.sample.web_");
-
 		TestCase.setUpPortalInstance();
 
 		User.firstLoginPG();
