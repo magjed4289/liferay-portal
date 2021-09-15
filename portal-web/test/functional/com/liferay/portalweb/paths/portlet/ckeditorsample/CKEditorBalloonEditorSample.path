@@ -38,13 +38,23 @@
 	<td></td>
 </tr>
 <tr>
+	<td>TOOLBAR_LINK_BUTTON</td>
+	<td>//span[contains(@class,'cke_button__link_icon')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>CHK_BTN</td>
 	<td>//a[contains(@class,'cke_button')]//span[contains(@class,'check_icon')]</td>
 	<td></td>
 </tr>
 <tr>
+	<td>CHK_BTN_TABLE</td>
+	<td>//a[contains(@class,'cke_button') and contains(@title,'OK')] | //a[contains(@class,'cke_button') and contains(@data-restore-title,'OK')]//span[contains(@class,'check_icon')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>INSERT_BTN</td>
-	<td>//button[contains(@class,'lfr-balloon-editor-insert-button')]</td>
+	<td>//button[contains(@class,'insert-button')][not(contains(@style,'display: none'))]</td>
 	<td></td>
 </tr>
 <tr>
@@ -59,8 +69,13 @@
 	<td></td>
 </tr>
 <tr>
+	<td>BODY_TEXT_P2</td>
+	<td>//div[@class='portlet-body']/div/div/p[2]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>BODY_TEXT_HYPERLINK</td>
-	<td>//div[@class='portlet-body']/div/div/p[2]/a</td>
+	<td>//div[@class='portlet-body']/div/div/p[2]/a | //div[@class='portlet-body']/div/div/p/a</td>
 	<td></td>
 </tr>
 <tr>
@@ -86,6 +101,16 @@
 <tr>
 	<td>PARAGRAPH_CONTENT_NUMBERED_LIST</td>
 	<td>//div[(@class='portlet-body')]//ol/li</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TABLE</td>
+	<td>//div[contains(@class,'editable')]//table/tbody</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TABLE_CELL</td>
+	<td>//div[contains(@class,'editable')]//table/tbody/tr[1]/td[1]</td>
 	<td></td>
 </tr>
 </tbody>

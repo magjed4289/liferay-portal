@@ -168,28 +168,45 @@ definition {
 
 			AssertElementNotPresent(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
+
+		task ("Link") {
+			TripleClick(locator1="CKEditorBalloonEditorSample#BODY_TEXT");
+
+			Click(locator1="CKEditorBalloonEditorSample#TOOLBAR_LINK_BUTTON");
+
+			Type.sendKeys(
+					locator1 = "CKEditorBalloonEditorSample#HYPERLINK_TEXT_INPUT",
+					value1 = "www.google.com");
+
+			Click(locator1="CKEditorBalloonEditorSample#CHK_BTN");
+
+			AssertVisible(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+		}
 	}
 
 	@description = "Assert table option enabled in the toolbar"
 	@priority = "4"
 	test CanManageTable {
-		task ("Clean the paragraph") {
-			TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+		task ("Create a table") {
+			BalloonEditor.clearParagraphWithBackspace(paragraph = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 
-			KeyPress(
-				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK",
-				value1 = "\BACK_SPACE");
+			BalloonEditor.addTable();
+
+			AssertVisible(locator1 = "CKEditorBalloonEditorSample#TABLE");
 		}
 
-		task ("Add table") {
-			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
+		task("Write in a cell") {
+			Click(locator1 = "CKEditorBalloonEditorSample#TABLE_CELL");
 
-			Click(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
+			Type.sendKeys(
+					locator1 = "CKEditorBalloonEditorSample#TABLE_CELL",
+					value1 = "test");
+		}
 
-			Click(locator1 = "CKEditorBalloonEditorSample#INSERT_TABLE_BTN");
+		task("Assert text edition toolbar appearance when highlighting a text inside the cell") {
+			TripleClick(locator1 = "CKEditorBalloonEditorSample#TABLE_CELL");
 
-			Click(locator1 = "CKEditorBalloonEditorSample#CHK_BTN");
+			AssertVisible(locator1="CKEditorBalloonEditorSample#TOOLBAR_ANY_ITEM_BUTTON");
 		}
 	}
-
 }
