@@ -166,15 +166,15 @@ definition {
 		}
 
 		task ("Link") {
-			TripleClick(locator1="CKEditorBalloonEditorSample#BODY_TEXT");
+			TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 
-			Click(locator1="CKEditorBalloonEditorSample#TOOLBAR_LINK_BUTTON");
+			Click(locator1 = "CKEditorBalloonEditorSample#TOOLBAR_LINK_BUTTON");
 
 			Type.sendKeys(
-					locator1 = "CKEditorBalloonEditorSample#HYPERLINK_TEXT_INPUT",
-					value1 = "www.google.com");
+				locator1 = "CKEditorBalloonEditorSample#HYPERLINK_TEXT_INPUT",
+				value1 = "www.google.com");
 
-			Click(locator1="CKEditorBalloonEditorSample#CHK_BTN");
+			Click(locator1 = "CKEditorBalloonEditorSample#CHK_BTN");
 
 			AssertVisible(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
@@ -191,18 +191,19 @@ definition {
 			AssertVisible(locator1 = "CKEditorBalloonEditorSample#TABLE");
 		}
 
-		task("Write in a cell") {
+		task ("Write in a cell") {
 			Click(locator1 = "CKEditorBalloonEditorSample#TABLE_CELL");
 
 			Type.sendKeys(
-					locator1 = "CKEditorBalloonEditorSample#TABLE_CELL",
-					value1 = "test");
+				locator1 = "CKEditorBalloonEditorSample#TABLE_CELL",
+				value1 = "test");
 		}
 
-		task("Assert text edition toolbar appearance when highlighting a text inside the cell") {
+		task ("Assert text edition toolbar appearance when highlighting a text inside the cell") {
 			TripleClick(locator1 = "CKEditorBalloonEditorSample#TABLE_CELL");
 
-			AssertVisible(locator1="CKEditorBalloonEditorSample#TOOLBAR_ANY_ITEM_BUTTON");
+			AssertVisible(locator1 = "CKEditorBalloonEditorSample#TOOLBAR_ANY_ITEM_BUTTON");
 		}
 	}
+
 }

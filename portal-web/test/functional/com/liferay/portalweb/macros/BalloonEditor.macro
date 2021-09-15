@@ -1,5 +1,23 @@
 definition {
 
+	macro addTable {
+		AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
+
+		Click(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
+
+		Click(locator1 = "CKEditorBalloonEditorSample#INSERT_TABLE_BTN");
+
+		Click(locator1 = "CKEditorBalloonEditorSample#CHK_BTN_TABLE");
+	}
+
+	macro clearParagraphWithBackspace {
+		TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+
+		KeyPress(
+			locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK",
+			value1 = "\BACK_SPACE");
+	}
+
 	macro toggleBalloonEditorContentStyle {
 		TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 
@@ -12,21 +30,4 @@ definition {
 			locator1 = "CKEditorBalloonEditorSample#TOOLBAR_ANY_ITEM_BUTTON");
 	}
 
-	macro addTable {
-		AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
-
-		Click(locator1 = "CKEditorBalloonEditorSample#INSERT_BTN");
-
-		Click(locator1 = "CKEditorBalloonEditorSample#INSERT_TABLE_BTN");
-
-		Click(locator1 = "CKEditorBalloonEditorSample#CHK_BTN_TABLE");
-	}
-
-	macro clearParagraphWithBackspace{
-		TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
-
-		KeyPress(
-				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK",
-				value1 = "\BACK_SPACE");
-	}
 }
