@@ -11,10 +11,10 @@ definition {
 	}
 
 	macro clearParagraphWithBackspace {
-		TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+		TripleClick(locator1 = "${paragraph}");
 
 		KeyPress(
-			locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK",
+			locator1 = "${paragraph}",
 			value1 = "\BACK_SPACE");
 	}
 
