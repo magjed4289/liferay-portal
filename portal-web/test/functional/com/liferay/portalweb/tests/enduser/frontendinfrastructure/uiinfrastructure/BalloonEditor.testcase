@@ -49,6 +49,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Bold");
 
 			AssertElementPresent(
+				paragraph_number="1",
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
@@ -63,6 +64,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Italic");
 
 			AssertElementPresent(
+				paragraph_number="1",
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
@@ -77,6 +79,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Underline");
 
 			AssertElementPresent(
+				paragraph_number="1",
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
@@ -91,6 +94,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Bulleted");
 
 			AssertElementPresent(
+				paragraph_number="1",
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
@@ -106,6 +110,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Numbered");
 
 			AssertElementPresent(
+				paragraph_number="1",
 				key_textName = "${paragraphText}",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 		}
@@ -114,6 +119,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Center");
 
 			AssertAttributeValue(
+				paragraph_number="1",
 				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				value1 = "text-align: center;");
@@ -123,6 +129,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Align Right");
 
 			AssertAttributeValue(
+				paragraph_number="1",
 				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				value1 = "text-align: right;");
@@ -132,6 +139,7 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(paragraph_number="1",optionTool = "Justify");
 
 			AssertAttributeValue(
+				paragraph_number="1",
 				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				value1 = "text-align: justify;");
@@ -162,11 +170,15 @@ definition {
 
 			Click(locator1 = "CKEditor#HYPERLINK_UNLINK");
 
-			AssertElementNotPresent(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+			AssertElementNotPresent(
+				paragraph_number="1",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
 
 		task ("Link") {
-			TripleClick(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
+			TripleClick(
+				paragraph_number="1",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT");
 
 			Click(locator1 = "CKEditor#TOOLBAR_LINK_BUTTON_BALLOON");
 
@@ -176,7 +188,9 @@ definition {
 
 			Click(locator1 = "CKEditor#CHK_BTN");
 
-			AssertVisible(locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
+			AssertVisible(
+				paragraph_number="1",
+				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT_HYPERLINK");
 		}
 	}
 
@@ -205,5 +219,4 @@ definition {
 			AssertVisible(locator1 = "CKEditor#TOOLBAR_ANY_ITEM_BUTTON");
 		}
 	}
-
 }
