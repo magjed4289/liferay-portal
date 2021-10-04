@@ -1,5 +1,19 @@
 definition {
 
+	macro _deleteRemoteAppAPI {
+		var remoteAppName = "${remoteAppNameToBeRemoved}";
+
+		Click(locator1 = "xPath=(//div[@class='table-list-title']//a[contains(text(),'${remoteAppName}')])");
+
+		var currentURL = Navigator.getCurrentURL();
+
+		var findWhereIdBegins = StringUtil.extractLast("${currentURL}", "remoteAppEntryId=");
+
+		var remoteAppEntryIdValue = StringUtil.extractFirst("${findWhereIdBegins}", "&_com_liferay_remote_app_admin_web_portlet_RemoteAppAdminPortlet_redirect");
+
+		JSONRemoteApp.deleteIFrameRemoteAppEntry(remoteAppEntryId = "${remoteAppEntryIdValue}");
+	}
+
 	macro addApp {
 		LexiconEntry.gotoAdd();
 
@@ -14,6 +28,16 @@ definition {
 		Click(locator1 = "RemoteApps#REMOTE_TABLE_ELLIPSIS");
 
 		Click(locator1 = "RemoteApps#REMOTE_TABLE_DELETE");
+	}
+
+	macro deleteRemoteAppAPI {
+		var remoteAppNameToBeRemoved = "${entryName}";
+		RemoteApps._deleteRemoteAppAPI(remoteAppName = "${remoteAppNameToBeRemoved}");
+		ApplicationsMenu.gotoPortlet(
+			category = "Custom Apps",
+			panel = "Applications",
+			portlet = "Remote Apps");
+		RemoteApps.viewTableEntryNameNotPresent(entryName = "${remoteAppNameToBeRemoved}");
 	}
 
 	macro viewEmptyRemoteTable {
@@ -41,27 +65,4 @@ definition {
 			value1 = "${entryURL}");
 	}
 
-	macro _deleteRemoteAppAPI {
-		var remoteAppName = "${remoteAppNameToBeRemoved}";
-
-		Click(locator1="xPath=(//div[@class='table-list-title']//a[contains(text(),'${remoteAppName}')])");
-
-		var currentURL = Navigator.getCurrentURL();
-
-		var findWhereIdBegins = StringUtil.extractLast("${currentURL}", "remoteAppEntryId=");
-
-		var remoteAppEntryIdValue = StringUtil.extractFirst("${findWhereIdBegins}", "&_com_liferay_remote_app_admin_web_portlet_RemoteAppAdminPortlet_redirect");
-
-		JSONRemoteApp.deleteIFrameRemoteAppEntry(remoteAppEntryId="${remoteAppEntryIdValue}");
-	}
-
-	macro deleteRemoteAppAPI {
-		var remoteAppNameToBeRemoved = "${entryName}";
-		RemoteApps._deleteRemoteAppAPI(remoteAppName="${remoteAppNameToBeRemoved}");
-		ApplicationsMenu.gotoPortlet(
-				category = "Custom Apps",
-				panel = "Applications",
-				portlet = "Remote Apps");
-		RemoteApps.viewTableEntryNameNotPresent(entryName="${remoteAppNameToBeRemoved}");
-	}
 }
