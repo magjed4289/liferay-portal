@@ -14,7 +14,7 @@ definition {
 		SignIn.signInTestSetup();
 	}
 
-	//un comentario para test
+	// Un comentario para test
 
 	tearDown {
 		var testPortalInstance = PropsUtil.get("test.portal.instance");
