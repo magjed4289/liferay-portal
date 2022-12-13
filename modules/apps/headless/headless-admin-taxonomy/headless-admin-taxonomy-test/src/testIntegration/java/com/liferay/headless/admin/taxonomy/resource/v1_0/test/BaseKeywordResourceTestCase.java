@@ -75,8 +75,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -246,7 +244,10 @@ public abstract class BaseKeywordResourceTestCase {
 			assertEquals(
 				Arrays.asList(irrelevantKeyword),
 				(List<Keyword>)page.getItems());
-			assertValid(page, "/asset-libraries/{assetLibraryId}/keywords");
+			assertValid(
+				page,
+				testGetAssetLibraryKeywordsPage_getExpectedActions(
+					irrelevantAssetLibraryId));
 		}
 
 		Keyword keyword1 = testGetAssetLibraryKeywordsPage_addKeyword(
@@ -262,11 +263,32 @@ public abstract class BaseKeywordResourceTestCase {
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(keyword1, keyword2), (List<Keyword>)page.getItems());
-		assertValid(page, "/asset-libraries/{assetLibraryId}/keywords");
+		assertValid(
+			page,
+			testGetAssetLibraryKeywordsPage_getExpectedActions(assetLibraryId));
 
 		keywordResource.deleteKeyword(keyword1.getId());
 
 		keywordResource.deleteKeyword(keyword2.getId());
+	}
+
+	protected Map<String, Map>
+			testGetAssetLibraryKeywordsPage_getExpectedActions(
+				Long assetLibraryId)
+		throws Exception {
+
+		Map<String, Map> expectedActions = new HashMap<>();
+
+		Map createBatchAction = new HashMap<>();
+		createBatchAction.put("method", "POST");
+		createBatchAction.put(
+			"href",
+			"http://localhost:8080/o/headless-admin-taxonomy/v1.0/asset-libraries/{assetLibraryId}/keywords/batch".
+				replace("{assetLibraryId}", String.valueOf(assetLibraryId)));
+
+		expectedActions.put("createBatch", createBatchAction);
+
+		return expectedActions;
 	}
 
 	@Test
@@ -660,11 +682,19 @@ public abstract class BaseKeywordResourceTestCase {
 
 		assertContains(keyword1, (List<Keyword>)page.getItems());
 		assertContains(keyword2, (List<Keyword>)page.getItems());
-		assertValid(page, "/keywords/ranked");
+		assertValid(page, testGetKeywordsRankedPage_getExpectedActions());
 
 		keywordResource.deleteKeyword(keyword1.getId());
 
 		keywordResource.deleteKeyword(keyword2.getId());
+	}
+
+	protected Map<String, Map> testGetKeywordsRankedPage_getExpectedActions()
+		throws Exception {
+
+		Map<String, Map> expectedActions = new HashMap<>();
+
+		return expectedActions;
 	}
 
 	@Test
@@ -910,7 +940,9 @@ public abstract class BaseKeywordResourceTestCase {
 			assertEquals(
 				Arrays.asList(irrelevantKeyword),
 				(List<Keyword>)page.getItems());
-			assertValid(page, "/sites/{siteId}/keywords");
+			assertValid(
+				page,
+				testGetSiteKeywordsPage_getExpectedActions(irrelevantSiteId));
 		}
 
 		Keyword keyword1 = testGetSiteKeywordsPage_addKeyword(
@@ -926,11 +958,29 @@ public abstract class BaseKeywordResourceTestCase {
 
 		assertEqualsIgnoringOrder(
 			Arrays.asList(keyword1, keyword2), (List<Keyword>)page.getItems());
-		assertValid(page, "/sites/{siteId}/keywords");
+		assertValid(page, testGetSiteKeywordsPage_getExpectedActions(siteId));
 
 		keywordResource.deleteKeyword(keyword1.getId());
 
 		keywordResource.deleteKeyword(keyword2.getId());
+	}
+
+	protected Map<String, Map> testGetSiteKeywordsPage_getExpectedActions(
+			Long siteId)
+		throws Exception {
+
+		Map<String, Map> expectedActions = new HashMap<>();
+
+		Map createBatchAction = new HashMap<>();
+		createBatchAction.put("method", "POST");
+		createBatchAction.put(
+			"href",
+			"http://localhost:8080/o/headless-admin-taxonomy/v1.0/sites/{siteId}/keywords/batch".
+				replace("{siteId}", String.valueOf(siteId)));
+
+		expectedActions.put("createBatch", createBatchAction);
+
+		return expectedActions;
 	}
 
 	@Test
@@ -1581,7 +1631,9 @@ public abstract class BaseKeywordResourceTestCase {
 		Assert.assertTrue(valid);
 	}
 
-	protected void assertValid(Page<Keyword> page, String path) {
+	protected void assertValid(
+		Page<Keyword> page, Map<String, Map> expectedActions) {
+
 		boolean valid = false;
 
 		java.util.Collection<Keyword> keywords = page.getItems();
@@ -1597,96 +1649,19 @@ public abstract class BaseKeywordResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		if (path.equals("/asset-libraries/{assetLibraryId}/keywords")) {
-			assertBatchAction(
-				page, "createBatch", "POST",
-				"/headless-admin-taxonomy/v1.0/asset-libraries/{assetLibraryId}/keywords",
-				path);
-			assertBatchAction(
-				page, "deleteBatch", "DELETE",
-				"/headless-admin-taxonomy/v1.0/asset-libraries/{assetLibraryId}/keywords",
-				path);
-		}
-
-		if (path.equals("/keywords/ranked")) {
-			assertBatchAction(
-				page, "createBatch", "POST",
-				"/headless-admin-taxonomy/v1.0/keywords/ranked", path);
-			assertBatchAction(
-				page, "deleteBatch", "DELETE",
-				"/headless-admin-taxonomy/v1.0/keywords/ranked", path);
-		}
-
-		if (path.equals("/sites/{siteId}/keywords")) {
-			assertBatchAction(
-				page, "createBatch", "POST",
-				"/headless-admin-taxonomy/v1.0/sites/{siteId}/keywords", path);
-			assertBatchAction(
-				page, "deleteBatch", "DELETE",
-				"/headless-admin-taxonomy/v1.0/sites/{siteId}/keywords", path);
-		}
-	}
-
-	private void assertBatchAction(
-		Page<Keyword> page, String action, String method, String expectedPath,
-		String path) {
-
 		Map<String, Map> actions = page.getActions();
 
-		Map batchAction = actions.get(action);
+		for (String expectedActionName : expectedActions.keySet()) {
+			Map action = actions.get(expectedActionName);
 
-		Assert.assertNotNull(
-			"No Actions for " + action + " in path " + path, batchAction);
-		Assert.assertEquals(
-			"The batch action method value is not correct", method,
-			batchAction.get("method"));
-		assertHrefInBatchActionMatchesPath(
-			expectedPath,
-			batchAction.get(
-				"href"
-			).toString(),
-			action, path);
-	}
+			Assert.assertNotNull(
+				expectedActionName + " action is missing", action);
 
-	private void assertHrefInBatchActionMatchesPath(
-		String expectedPath, String href, String action, String path) {
+			Map expectedAction = expectedActions.get(expectedActionName);
 
-		//only paths with POST operation available will have createBatch
-		//we need a freeMarker "if" to check whether the path we're checking has it
-		//and then check the createBatch details
-
-		if (action.equals("createBatch")) {
-			String expectedPathReplaced = expectedPath.replaceAll(
-				"(\\Q{\\E.*?\\Q}\\E)", "(.*)");
-			String[] detachActualPathFromServer = href.split("/o/");
-			Pattern expectedPathPattern = Pattern.compile(
-				expectedPathReplaced + "/batch");
-			Matcher actualPathMatcher = expectedPathPattern.matcher(
-				"/" + detachActualPathFromServer[1]);
-			Assert.assertTrue(
-				"The /" + detachActualPathFromServer[1] + " does not match " +
-					expectedPathReplaced + "/batch for " + action +
-						" in the path " + path,
-				actualPathMatcher.matches());
-		}
-
-		if (action.equals("deleteBatch") || action.equals("updateBatch")) {
-			/*TO DO
-			updateBacth and deleteBatch inherit the href from the "simplest" method in the group
-			(that is, no siteId, no assetLibraryId, etc., needed)
-			*/
-			String expectedPathReplaced = expectedPath.replaceAll(
-				"(/v.1.0/(.*?)/\\Q{\\E.*?\\Q}\\E)", "/v.1.0");
-			String[] detachActualPathFromServer = href.split("/o/");
-			Pattern expectedPathPattern = Pattern.compile(
-				expectedPathReplaced + "/batch");
-			Matcher actualPathMatcher = expectedPathPattern.matcher(
-				"/" + detachActualPathFromServer[1]);
-			Assert.assertTrue(
-				"The /" + detachActualPathFromServer[1] + " does not match " +
-					expectedPathReplaced + "/batch for " + action +
-						" in the path " + path,
-				actualPathMatcher.matches());
+			Assert.assertEquals(
+				expectedAction.get("method"), action.get("method"));
+			Assert.assertEquals(expectedAction.get("href"), action.get("href"));
 		}
 	}
 

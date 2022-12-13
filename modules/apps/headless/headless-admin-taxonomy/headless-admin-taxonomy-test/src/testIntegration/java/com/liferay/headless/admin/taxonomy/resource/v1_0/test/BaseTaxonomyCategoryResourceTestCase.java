@@ -70,8 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -234,13 +232,23 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 			taxonomyCategory1, (List<TaxonomyCategory>)page.getItems());
 		assertContains(
 			taxonomyCategory2, (List<TaxonomyCategory>)page.getItems());
-		assertValid(page, "/taxonomy-categories/ranked");
+		assertValid(
+			page, testGetTaxonomyCategoriesRankedPage_getExpectedActions());
 
 		taxonomyCategoryResource.deleteTaxonomyCategory(
 			taxonomyCategory1.getId());
 
 		taxonomyCategoryResource.deleteTaxonomyCategory(
 			taxonomyCategory2.getId());
+	}
+
+	protected Map<String, Map>
+			testGetTaxonomyCategoriesRankedPage_getExpectedActions()
+		throws Exception {
+
+		Map<String, Map> expectedActions = new HashMap<>();
+
+		return expectedActions;
 	}
 
 	@Test
@@ -344,7 +352,8 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 				(List<TaxonomyCategory>)page.getItems());
 			assertValid(
 				page,
-				"/taxonomy-categories/{parentTaxonomyCategoryId}/taxonomy-categories");
+				testGetTaxonomyCategoryTaxonomyCategoriesPage_getExpectedActions(
+					irrelevantParentTaxonomyCategoryId));
 		}
 
 		TaxonomyCategory taxonomyCategory1 =
@@ -367,13 +376,35 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 			(List<TaxonomyCategory>)page.getItems());
 		assertValid(
 			page,
-			"/taxonomy-categories/{parentTaxonomyCategoryId}/taxonomy-categories");
+			testGetTaxonomyCategoryTaxonomyCategoriesPage_getExpectedActions(
+				parentTaxonomyCategoryId));
 
 		taxonomyCategoryResource.deleteTaxonomyCategory(
 			taxonomyCategory1.getId());
 
 		taxonomyCategoryResource.deleteTaxonomyCategory(
 			taxonomyCategory2.getId());
+	}
+
+	protected Map<String, Map>
+			testGetTaxonomyCategoryTaxonomyCategoriesPage_getExpectedActions(
+				String parentTaxonomyCategoryId)
+		throws Exception {
+
+		Map<String, Map> expectedActions = new HashMap<>();
+
+		Map createBatchAction = new HashMap<>();
+		createBatchAction.put("method", "POST");
+		createBatchAction.put(
+			"href",
+			"http://localhost:8080/o/headless-admin-taxonomy/v1.0/taxonomy-categories/{parentTaxonomyCategoryId}/taxonomy-categories/batch".
+				replace(
+					"{parentTaxonomyCategoryId}",
+					String.valueOf(parentTaxonomyCategoryId)));
+
+		expectedActions.put("createBatch", createBatchAction);
+
+		return expectedActions;
 	}
 
 	@Test
@@ -1045,7 +1076,8 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 				(List<TaxonomyCategory>)page.getItems());
 			assertValid(
 				page,
-				"/taxonomy-vocabularies/{taxonomyVocabularyId}/taxonomy-categories");
+				testGetTaxonomyVocabularyTaxonomyCategoriesPage_getExpectedActions(
+					irrelevantTaxonomyVocabularyId));
 		}
 
 		TaxonomyCategory taxonomyCategory1 =
@@ -1069,13 +1101,35 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 			(List<TaxonomyCategory>)page.getItems());
 		assertValid(
 			page,
-			"/taxonomy-vocabularies/{taxonomyVocabularyId}/taxonomy-categories");
+			testGetTaxonomyVocabularyTaxonomyCategoriesPage_getExpectedActions(
+				taxonomyVocabularyId));
 
 		taxonomyCategoryResource.deleteTaxonomyCategory(
 			taxonomyCategory1.getId());
 
 		taxonomyCategoryResource.deleteTaxonomyCategory(
 			taxonomyCategory2.getId());
+	}
+
+	protected Map<String, Map>
+			testGetTaxonomyVocabularyTaxonomyCategoriesPage_getExpectedActions(
+				Long taxonomyVocabularyId)
+		throws Exception {
+
+		Map<String, Map> expectedActions = new HashMap<>();
+
+		Map createBatchAction = new HashMap<>();
+		createBatchAction.put("method", "POST");
+		createBatchAction.put(
+			"href",
+			"http://localhost:8080/o/headless-admin-taxonomy/v1.0/taxonomy-vocabularies/{taxonomyVocabularyId}/taxonomy-categories/batch".
+				replace(
+					"{taxonomyVocabularyId}",
+					String.valueOf(taxonomyVocabularyId)));
+
+		expectedActions.put("createBatch", createBatchAction);
+
+		return expectedActions;
 	}
 
 	@Test
@@ -1896,7 +1950,9 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 		Assert.assertTrue(valid);
 	}
 
-	protected void assertValid(Page<TaxonomyCategory> page, String path) {
+	protected void assertValid(
+		Page<TaxonomyCategory> page, Map<String, Map> expectedActions) {
+
 		boolean valid = false;
 
 		java.util.Collection<TaxonomyCategory> taxonomyCategories =
@@ -1913,104 +1969,19 @@ public abstract class BaseTaxonomyCategoryResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		if (path.equals("/taxonomy-categories/ranked")) {
-			assertBatchAction(
-				page, "createBatch", "POST",
-				"/headless-admin-taxonomy/v1.0/taxonomy-categories/ranked",
-				path);
-			assertBatchAction(
-				page, "deleteBatch", "DELETE",
-				"/headless-admin-taxonomy/v1.0/taxonomy-categories/ranked",
-				path);
-		}
-
-		if (path.equals(
-				"/taxonomy-categories/{parentTaxonomyCategoryId}/taxonomy-categories")) {
-
-			assertBatchAction(
-				page, "createBatch", "POST",
-				"/headless-admin-taxonomy/v1.0/taxonomy-categories/{parentTaxonomyCategoryId}/taxonomy-categories",
-				path);
-			assertBatchAction(
-				page, "deleteBatch", "DELETE",
-				"/headless-admin-taxonomy/v1.0/taxonomy-categories/{parentTaxonomyCategoryId}/taxonomy-categories",
-				path);
-		}
-
-		if (path.equals(
-				"/taxonomy-vocabularies/{taxonomyVocabularyId}/taxonomy-categories")) {
-
-			assertBatchAction(
-				page, "createBatch", "POST",
-				"/headless-admin-taxonomy/v1.0/taxonomy-vocabularies/{taxonomyVocabularyId}/taxonomy-categories",
-				path);
-			assertBatchAction(
-				page, "deleteBatch", "DELETE",
-				"/headless-admin-taxonomy/v1.0/taxonomy-vocabularies/{taxonomyVocabularyId}/taxonomy-categories",
-				path);
-		}
-	}
-
-	private void assertBatchAction(
-		Page<TaxonomyCategory> page, String action, String method,
-		String expectedPath, String path) {
-
 		Map<String, Map> actions = page.getActions();
 
-		Map batchAction = actions.get(action);
+		for (String expectedActionName : expectedActions.keySet()) {
+			Map action = actions.get(expectedActionName);
 
-		Assert.assertNotNull(
-			"No Actions for " + action + " in path " + path, batchAction);
-		Assert.assertEquals(
-			"The batch action method value is not correct", method,
-			batchAction.get("method"));
-		assertHrefInBatchActionMatchesPath(
-			expectedPath,
-			batchAction.get(
-				"href"
-			).toString(),
-			action, path);
-	}
+			Assert.assertNotNull(
+				expectedActionName + " action is missing", action);
 
-	private void assertHrefInBatchActionMatchesPath(
-		String expectedPath, String href, String action, String path) {
+			Map expectedAction = expectedActions.get(expectedActionName);
 
-		//only paths with POST operation available will have createBatch
-		//we need a freeMarker "if" to check whether the path we're checking has it
-		//and then check the createBatch details
-
-		if (action.equals("createBatch")) {
-			String expectedPathReplaced = expectedPath.replaceAll(
-				"(\\Q{\\E.*?\\Q}\\E)", "(.*)");
-			String[] detachActualPathFromServer = href.split("/o/");
-			Pattern expectedPathPattern = Pattern.compile(
-				expectedPathReplaced + "/batch");
-			Matcher actualPathMatcher = expectedPathPattern.matcher(
-				"/" + detachActualPathFromServer[1]);
-			Assert.assertTrue(
-				"The /" + detachActualPathFromServer[1] + " does not match " +
-					expectedPathReplaced + "/batch for " + action +
-						" in the path " + path,
-				actualPathMatcher.matches());
-		}
-
-		if (action.equals("deleteBatch") || action.equals("updateBatch")) {
-			/*TO DO
-			updateBacth and deleteBatch inherit the href from the "simplest" method in the group
-			(that is, no siteId, no assetLibraryId, etc., needed)
-			*/
-			String expectedPathReplaced = expectedPath.replaceAll(
-				"(/v.1.0/(.*?)/\\Q{\\E.*?\\Q}\\E)", "/v.1.0");
-			String[] detachActualPathFromServer = href.split("/o/");
-			Pattern expectedPathPattern = Pattern.compile(
-				expectedPathReplaced + "/batch");
-			Matcher actualPathMatcher = expectedPathPattern.matcher(
-				"/" + detachActualPathFromServer[1]);
-			Assert.assertTrue(
-				"The /" + detachActualPathFromServer[1] + " does not match " +
-					expectedPathReplaced + "/batch for " + action +
-						" in the path " + path,
-				actualPathMatcher.matches());
+			Assert.assertEquals(
+				expectedAction.get("method"), action.get("method"));
+			Assert.assertEquals(expectedAction.get("href"), action.get("href"));
 		}
 	}
 
