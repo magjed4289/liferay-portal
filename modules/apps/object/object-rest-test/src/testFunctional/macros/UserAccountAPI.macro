@@ -10,7 +10,7 @@ definition {
 				var api = "user-accounts/${userAccountId}?${parameter}=${parameterValue}";
 			}
 
-			if (isSet(relationshipName) && isSet(customObjectEntryId)) {
+			if (isSet(relationshipName) && isSet(customObjectEntryId) && isSet(userAccountId)) {
 				var api = "user-accounts/${userAccountId}/${relationshipName}/${customObjectEntryId}";
 			}
 		}
@@ -181,7 +181,8 @@ definition {
 			givenName = "usergn");
 
 		static var staticResponse = "${response}";
-		static var staticUserAccountId = JSONUtil.getWithJSONPath("${response}", "$.id");
+
+		static var staticUserAccountId = JSONUtil.getWithJSONPath("${staticResponse}", "$.id");
 
 		return "${staticResponse}";
 

@@ -71,6 +71,7 @@ definition {
 		property portal.acceptance = "true";
 
 		task ("Given I relate the custom object entry with the userAccount entry through the userAccount PUT endpoint") {
+			echo("Given I relate the custom object entry with the userAccount entry through the userAccount PUT endpoint");
 			UserAccountAPI.relateObjectEntries(
 				customObjectId = "${staticObjectEntryId3}",
 				relationshipName = "usersSecondFoundations",
@@ -78,6 +79,7 @@ definition {
 		}
 
 		task ("When using the delete request deleteUserAccount{relationshipName}") {
+			echo("When using the delete request deleteUserAccount{relationshipName}");
 			UserAccountAPI.deleteObjectEntryRelatedToUserAccount(
 				customObjectEntryId = "${staticObjectEntryId3}",
 				relationshipName = "usersSecondFoundations",
@@ -85,10 +87,12 @@ definition {
 		}
 
 		task ("Then I can see no one entry correctly related in GET request response with the relationshipName={relationshipName}") {
+			echo("Then");
 			UserAccountAPI.assertResponseNotIncludeDetailsOfDeletedObjectEntry(
 				expectedValue = "[]",
 				relationshipName = "usersSecondFoundations",
 				userAccountId = "${staticUserAccountId}");
+			echo("THE END");
 		}
 	}
 
