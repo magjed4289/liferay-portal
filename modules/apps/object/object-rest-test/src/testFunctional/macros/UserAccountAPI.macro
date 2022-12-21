@@ -9,6 +9,10 @@ definition {
 			if (isSet(parameter)) {
 				var api = "user-accounts/${userAccountId}?${parameter}=${parameterValue}";
 			}
+
+			if (isSet(relationshipName) && isSet(customObjectEntryId)) {
+				var api = "user-accounts/${userAccountId}/${relationshipName}/${customObjectEntryId}";
+			}
 		}
 		else {
 			var api = "user-accounts";
@@ -69,11 +73,11 @@ definition {
 		return "${response}";
 	}
 
-	macro deleteUserAccountRelationship {
-		Variables.assertDefined(parameterList = "${userAccountId},${relationshipName},${customObjectId}");
+	macro deleteObjectEntryRelatedToUserAccount {
+		Variables.assertDefined(parameterList = "${userAccountId},${relationshipName},${customObjectEntryId}");
 
 		var curl = UserAccountAPI._curlUserAccount(
-			customObjectId = "${customObjectId}",
+			customObjectEntryId = "${customObjectEntryId}",
 			relationshipName = "${relationshipName}",
 			userAccountId = "${userAccountId}");
 
