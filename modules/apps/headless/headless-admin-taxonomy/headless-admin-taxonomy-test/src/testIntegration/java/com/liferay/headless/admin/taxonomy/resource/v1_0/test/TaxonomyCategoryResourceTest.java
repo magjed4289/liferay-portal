@@ -28,6 +28,8 @@ import com.liferay.portal.kernel.util.GetterUtil;
 
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import java.util.Map;
+import java.util.Collections;
 
 /**
  * @author Javier Gamarra
@@ -116,6 +118,14 @@ public class TaxonomyCategoryResourceTest
 				_assetVocabulary.getVocabularyId(), randomTaxonomyCategory());
 
 		return taxonomyCategory.getId();
+	}
+
+	@Override
+	protected Map<String,Map>
+			testGetTaxonomyCategoryTaxonomyCategoriesPage_getExpectedActions(String taxonomyCategoryId)
+		throws Exception {
+
+		return Collections.emptyMap();
 	}
 
 	@Override
