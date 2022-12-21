@@ -50,7 +50,7 @@ definition {
 			userAccountId = "${userAccountId}");
 
 		var actual = JSONUtil.getWithJSONPath("${response}", "$..items");
-
+		
 		TestUtils.assertEquals(
 			actual = "${actual}",
 			expected = "${expectedValue}");
