@@ -124,7 +124,6 @@ definition {
 	}
 
 	@disable-webdriver = "true"
-	@ignore = "true"
 	@priority = "4"
 	test CanGetEmptyPageWithNoEntriesRelated {
 		property portal.acceptance = "true";
