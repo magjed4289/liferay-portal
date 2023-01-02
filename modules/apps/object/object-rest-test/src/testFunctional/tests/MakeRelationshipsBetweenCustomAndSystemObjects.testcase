@@ -54,6 +54,8 @@ definition {
 	}
 
 	@disable-webdriver = "true"
+	@description = "feature.flag.LPS-153324=true"
+	@ignore = "true"
 	@priority = "5"
 	test CanCreateMultipleManyToManyRelationshipsBetweenTwoObjects {
 		property portal.acceptance = "true";
@@ -86,6 +88,8 @@ definition {
 	}
 
 	@disable-webdriver = "true"
+	@description = "feature.flag.LPS-153324=true"
+	@ignore = "true"
 	@priority = "5"
 	test CanCreateMultipleOneToManyRelationshipsBetweenTwoObjects {
 		property portal.acceptance = "true";
