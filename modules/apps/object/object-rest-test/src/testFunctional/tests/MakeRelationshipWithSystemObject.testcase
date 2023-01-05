@@ -82,7 +82,6 @@ definition {
 	}
 
 	@disable-webdriver = "true"
-	@ignore = "true"
 	@priority = "4"
 	test CanDeleteCustomObjectEntryRelaatedToSystemObjectByManyToMany {
 		property portal.acceptance = "true";
@@ -120,7 +119,6 @@ definition {
 	}
 
 	@disable-webdriver = "true"
-	@ignore = "true"
 	@priority = "4"
 	test CanDeleteCustomObjectEntryRelatedToSystemObjectByOneToMany {
 		property portal.acceptance = "true";
@@ -153,7 +151,6 @@ definition {
 	}
 
 	@disable-webdriver = "true"
-	@ignore = "true"
 	@priority = "4"
 	test CanRelateCustomObjectEntriesToSystemObjectEntries {
 		property portal.acceptance = "true";
@@ -186,7 +183,6 @@ definition {
 	}
 
 	@disable-webdriver = "true"
-	@ignore = "true"
 	@priority = "4"
 	test CanRelateCustomObjectEntriesToSystemObjectEntriesByManyToMany {
 		property portal.acceptance = "true";
@@ -219,7 +215,6 @@ definition {
 	}
 
 	@disable-webdriver = "true"
-	@ignore = "true"
 	@priority = "4"
 	test DeletedObjectEntriesDoNotAppearInManyToManyRelationshipDetails {
 		property portal.acceptance = "true";
