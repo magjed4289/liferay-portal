@@ -198,42 +198,49 @@ definition {
 		}
 	}
 
-	@disable-webdriver = "true"
 	@priority = 4
 	test CanGraphQL {
 		property portal.acceptance = "true";
 
-		task ("Given manyToMany relationship universitySubjects with deletionType Disassociate created") {
+		task ("Given oneToMany relationship universityStudents created") {
+			var universityObjectId = ObjectDefinitionAPI.createAndPublishObjectDefinition(
+				en_US_label = "university",
+				en_US_plural_label = "universities",
+				name = "University",
+				requiredStringFieldName = "name");
+
+			var studentObjectId = ObjectDefinitionAPI.createAndPublishObjectDefinition(
+				en_US_label = "student",
+				en_US_plural_label = "students",
+				name = "Student",
+				requiredStringFieldName = "name");
+
 			var relationshipName = ObjectDefinitionAPI.createRelationship(
 				deletionType = "cascade",
 				en_US_label = "universityStudents",
 				name = "universityStudents",
-				objectDefinitionId1 = ${staticUniversityObjectId},
-				objectDefinitionId2 = ${staticStudentObjectId},
+				objectDefinitionId1 = ${universityObjectId},
+				objectDefinitionId2 = ${studentObjectId},
 				type = "oneToMany");
 		}
 
-		task ("Given three university entries created") {
-			var studentId1 = ObjectDefinitionAPI.createObjectEntryWithName(
+		task ("Given object entries created and related") {
+			var studentId = ObjectDefinitionAPI.createObjectEntryWithName(
 				en_US_plural_label = "students",
 				name = "Liferay Student");
-			var universityId1 = ObjectDefinitionAPI.createObjectEntryWithName(
+			var universityId = ObjectDefinitionAPI.createObjectEntryWithName(
 				en_US_plural_label = "universities",
 				name = "Liferay University");
 
 			ObjectDefinitionAPI.relateObjectEntries(
 				en_US_plural_label = "universities",
-				objectEntry1 = ${universityId1},
-				objectEntry2 = ${studentId1},
+				objectEntry1 = ${universityId},
+				objectEntry2 = ${studentId},
 				relationshipName = "universityStudents");
 		}
 
-		task ("Then") {
+		task ("Then I'm able to get universityStudents details with graphQL") {
 			var responseToParse = ObjectDefinitionAPI.graphQL();
-
-			echo(${responseToParse});
-
-			//var value = StringUtil.contains("${responseToParse}","University");
 
 			var value = JSONUtil.getWithJSONPath(${responseToParse}, "$..universityStudents.name");
 
