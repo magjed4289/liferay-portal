@@ -208,7 +208,6 @@ definition {
 				en_US_plural_label = "universities",
 				name = "University",
 				requiredStringFieldName = "name");
-
 			var studentObjectId = ObjectDefinitionAPI.createAndPublishObjectDefinition(
 				en_US_label = "student",
 				en_US_plural_label = "students",
