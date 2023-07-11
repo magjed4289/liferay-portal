@@ -9,8 +9,6 @@ definition {
 	setUp {
 		TestCase.setUpPortalInstanceNoSelenium();
 
-		echo("something");
-
 		task ("Given Author, Book, Student, Subject and Univeristy object definitions with field 'name' created") {
 			ObjectDefinitionAPI.createAndPublishObjectDefinition(
 				en_US_plural_label = "students",
