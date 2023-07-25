@@ -95,7 +95,6 @@ definition {
 
 	@priority = 4
 	test CanCreateObjectEntryByScopeKey {
-		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
 		property portal.acceptance = "true";
 		property test.liferay.virtual.instance = "false";
 
@@ -128,7 +127,6 @@ definition {
 
 	@priority = 4
 	test CanCreateObjectEntryInVirtualInstance {
-		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
 		property portal.acceptance = "true";
 		property test.liferay.virtual.instance = "false";
 
@@ -162,7 +160,6 @@ definition {
 
 	@priority = 4
 	test CanIncludeObjectFieldInAPIExplorer {
-		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
 		property portal.acceptance = "true";
 		property test.liferay.virtual.instance = "false";
 
@@ -197,7 +194,7 @@ definition {
 
 	@priority = 4
 	test CanScopeObjectByInstanceInExportTask {
-		property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com${line.separator}feature.flag.COMMERCE-8087=true";
+		property custom.properties = "feature.flag.COMMERCE-8087=true";
 		property portal.acceptance = "true";
 		property test.liferay.virtual.instance = "false";
 
