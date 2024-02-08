@@ -48,7 +48,7 @@ public class ChannelResourceImpl extends BaseChannelResourceImpl {
 
 		if (commerceOrder == null) {
 			throw new NoSuchOrderException(
-				"Unable to find order with external reference code " +
+				"Change to test " +
 					externalReferenceCode);
 		}
 
