@@ -140,6 +140,9 @@ export default defineConfig({
 		screenshot: 'only-on-failure',
 		testIdAttribute: 'data-qa-id',
 		trace: 'retain-on-failure',
-	},
+		launchOptions: {
+			args: ['--remote-debugging-port=9222'],
+		  },
+		},
 	workers: 1,
 });

@@ -24,6 +24,37 @@ export const test = mergeTests(
 	objectPagesTest
 );
 
+const BrowserManager = require('../../BrowserManager.js');
+
+const remoteDebuggingUrl = 'http://127.0.0.1:9222'; // Adjust this to your remote debugging URL
+
+const fetch = require('node-fetch');
+
+async function testNetworkConnection() {
+  try {
+    const response = await fetch('http://127.0.0.1:9222/json/version');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch JSON: ${response.statusText}`);
+    }
+    const data = await response.json();
+    console.log('JSON data:', data);
+  } catch (error) {
+    console.error('Error fetching JSON:', error);
+  }
+}
+
+const tasks = [
+  async (manager) => {
+	await manager.connect();
+    const openPages = await manager.listOpenPages();
+    console.log('Open pages:', openPages);
+
+    if (openPages.length > 0) {
+      await manager.closePage(1); // Close the second page
+    }
+  }
+];
+
 const companyObjectDefinition = {
 	active: true,
 	externalReferenceCode: 'Test',
@@ -485,6 +516,12 @@ test('can import CSV file with an unexisting field', async ({
 	dataMigrationCenterPage,
 	page,
 }) => {
+	testNetworkConnection();
+	(async () => {
+		const manager = new BrowserManager(remoteDebuggingUrl);
+		await manager.setupAndPerformTasks(tasks);
+	  })();
+	
 	const response = await apiHelpers.objectAdmin.postObjectDefinition(
 		companyObjectDefinition
 	);
