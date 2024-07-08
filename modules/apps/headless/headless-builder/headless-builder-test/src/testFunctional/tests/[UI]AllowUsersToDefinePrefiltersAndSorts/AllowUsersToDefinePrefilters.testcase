@@ -195,6 +195,10 @@ definition {
 				actual = ${actualValue},
 				expected = "");
 
+			// LPD-30601 Pause needed to check the root cause
+
+			Pause(value1 = 5000);
+
 			APIExplorer.navigateToOpenAPI(customObjectPlural = "my-app");
 
 			APIExplorer.executeAPIMethod(
