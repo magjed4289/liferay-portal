@@ -557,4 +557,6 @@ public class BlogsEntryStagedModelDataHandler
 	@Reference
 	private PortletFileRepository _portletFileRepository;
 
+	private static boolean _unusedVariable;
+
 }
