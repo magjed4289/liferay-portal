@@ -46,4 +46,5 @@ public class AssetCategoryStagingModelListener
 	@Reference
 	private StagingModelListener<AssetCategory> _stagingModelListener;
 
+	private static boolean _unusedVariable;
 }
