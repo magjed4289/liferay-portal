@@ -277,6 +277,8 @@ public class ObjectEntryLocalServiceImpl
 
 		serviceContext.setStrictAdd(true);
 
+		System.out.println("SOMETHING");
+
 		TransactionCommitCallbackUtil.registerCallback(
 			() -> {
 				serviceContext.setStrictAdd(false);
