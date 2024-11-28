@@ -132,6 +132,8 @@ public class LayoutTestUtil {
 
 		portletPreferences.store();
 
+		System.out.println("NEW PORTLET ID "+ newPortletId);
+
 		return newPortletId;
 	}
 

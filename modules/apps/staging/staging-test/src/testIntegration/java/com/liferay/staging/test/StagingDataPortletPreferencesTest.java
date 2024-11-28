@@ -284,6 +284,7 @@ public class StagingDataPortletPreferencesTest
 		throws Exception {
 
 		if (addPortlet) {
+			System.out.println("Portlet ID to add portlet before adding it: "+portletId);
 			portletId = LayoutTestUtil.addPortletToLayout(
 				stagingLayout, portletId, preferenceMap);
 		}
@@ -300,6 +301,8 @@ public class StagingDataPortletPreferencesTest
 
 		livePortletPreferences = LayoutTestUtil.getPortletPreferences(
 			liveLayout, portletId);
+
+		System.out.println("Portlet ID in the end of publishLayoutWithDisplayPortlet: "+portletId);
 
 		return portletId;
 	}
