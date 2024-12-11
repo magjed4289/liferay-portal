@@ -9,7 +9,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.odata.entity.ComplexEntityField;
@@ -24,14 +23,13 @@ import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -78,8 +76,7 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 			}
 
 			Set<EntityField> processedEntityFields = new HashSet<>();
-			List<String> filterableFieldNames = new ArrayList<>(
-				Collections.emptyList());
+			Set<String> filterableFieldNames = new TreeSet<>();
 
 			for (Map.Entry<String, EntityField> entry :
 					entityFieldsMap.entrySet()) {
@@ -89,10 +86,6 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 						entry.getValue(), entry.getKey(),
 						processedEntityFields));
 			}
-
-			filterableFieldNames = _filterRedundantFields(filterableFieldNames);
-
-			filterableFieldNames.sort(String::compareTo);
 
 			schema.addExtension(
 				"x-filterable", new ArrayList<>(filterableFieldNames));
@@ -106,63 +99,47 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		_bundleContext = bundleContext;
 	}
 
-	private List<String> _filterRedundantFields(
-		List<String> filterableFieldNames) {
+	private String _filterRedundantField(String field) {
+		String[] parts = field.split("/");
+		List<String> reducedParts = new ArrayList<>();
 
-		List<String> filteredFields = new ArrayList<>();
+		int consecutiveCount = 1;
+		boolean inInitialRedundancy = true;
 
-		for (String field : filterableFieldNames) {
-			String[] parts = field.split("/");
-			List<String> reducedParts = new ArrayList<>();
+		for (int i = 0; i < parts.length; i++) {
+			if ((i > 0) && Objects.equals(parts[i], parts[i - 1])) {
+				consecutiveCount++;
+			}
+			else {
+				consecutiveCount = 1;
+			}
 
-			int consecutiveCount = 1;
-			boolean inInitialRedundancy = true;
-
-			for (int i = 0; i < parts.length; i++) {
-				if ((i > 0) && Objects.equals(parts[i], parts[i - 1])) {
-					consecutiveCount++;
-				}
-				else {
-					consecutiveCount = 1;
-				}
-
-				if (inInitialRedundancy && ((consecutiveCount % 2) == 0)) {
-					if (!reducedParts.isEmpty() &&
-						Objects.equals(
-							reducedParts.get(reducedParts.size() - 1),
-							parts[i])) {
-
-						reducedParts.remove(reducedParts.size() - 1);
-					}
-
-					continue;
-				}
-
+			if (inInitialRedundancy && ((consecutiveCount % 2) == 0)) {
 				if (!reducedParts.isEmpty() &&
 					Objects.equals(
 						reducedParts.get(reducedParts.size() - 1), parts[i])) {
 
-					continue;
+					reducedParts.remove(reducedParts.size() - 1);
 				}
 
-				reducedParts.add(parts[i]);
-
-				if ((consecutiveCount == 1) && (i > 0)) {
-					inInitialRedundancy = false;
-				}
+				continue;
 			}
 
-			String reducedField = String.join("/", reducedParts);
+			if (!reducedParts.isEmpty() &&
+				Objects.equals(
+					reducedParts.get(reducedParts.size() - 1), parts[i])) {
 
-			filteredFields.add(reducedField);
+				continue;
+			}
+
+			reducedParts.add(parts[i]);
+
+			if ((consecutiveCount == 1) && (i > 0)) {
+				inInitialRedundancy = false;
+			}
 		}
 
-		List<String> distinctFields = new ArrayList<>(
-			new LinkedHashSet<>(filteredFields));
-
-		distinctFields.sort(String::compareTo);
-
-		return distinctFields;
+		return String.join("/", reducedParts);
 	}
 
 	private Map<String, EntityField> _getEntityFieldsMap(
@@ -283,7 +260,11 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		}
 
 		if (!(entityField instanceof ComplexEntityField)) {
-			return SetUtil.fromArray(fieldName);
+			Set<String> singleFieldSet = new HashSet<>();
+
+			singleFieldSet.add(_filterRedundantField(fieldName));
+
+			return singleFieldSet;
 		}
 
 		ComplexEntityField complexEntityField = (ComplexEntityField)entityField;
