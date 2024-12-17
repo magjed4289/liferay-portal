@@ -74,8 +74,6 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 				continue;
 			}
 
-			Set<Map<String, EntityField>> processedEntityFieldMaps =
-				new HashSet<>();
 			Set<EntityField> processedEntityFields = new HashSet<>();
 			Set<String> filterableFieldNames = new TreeSet<>();
 
@@ -84,8 +82,8 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 
 				filterableFieldNames.addAll(
 					_getFilterableFieldNames(
-						entry.getValue(), entry.getKey(), processedEntityFields,
-						processedEntityFieldMaps));
+						entry.getValue(), entry.getKey(),
+						processedEntityFields));
 			}
 
 			schema.addExtension(
@@ -211,8 +209,7 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 
 	private Set<String> _getFilterableFieldNames(
 		EntityField entityField, String fieldName,
-		Set<EntityField> processedEntityFields,
-		Set<Map<String, EntityField>> processedEntityFieldMaps) {
+		Set<EntityField> processedEntityFields) {
 
 		if (!processedEntityFields.add(entityField)) {
 			return new HashSet<>();
@@ -231,10 +228,6 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		Map<String, EntityField> entityFieldsMap =
 			complexEntityField.getEntityFieldsMap();
 
-		if (!processedEntityFieldMaps.add(entityFieldsMap)) {
-			return new HashSet<>();
-		}
-
 		Set<String> filterableFieldNames = new HashSet<>();
 
 		for (Map.Entry<String, EntityField> entry :
@@ -242,7 +235,7 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 
 			Set<String> nestedFilterableFields = _getFilterableFieldNames(
 				entry.getValue(), fieldName + "/" + entry.getKey(),
-				processedEntityFields, processedEntityFieldMaps);
+				processedEntityFields);
 
 			filterableFieldNames.addAll(nestedFilterableFields);
 		}
