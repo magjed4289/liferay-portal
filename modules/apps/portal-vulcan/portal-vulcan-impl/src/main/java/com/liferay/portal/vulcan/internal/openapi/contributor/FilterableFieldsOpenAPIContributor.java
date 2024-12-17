@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -75,6 +74,8 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 				continue;
 			}
 
+			Set<Map<String, EntityField>> processedEntityFieldMaps =
+				new HashSet<>();
 			Set<EntityField> processedEntityFields = new HashSet<>();
 			Set<String> filterableFieldNames = new TreeSet<>();
 
@@ -83,8 +84,8 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 
 				filterableFieldNames.addAll(
 					_getFilterableFieldNames(
-						entry.getValue(), entry.getKey(),
-						processedEntityFields));
+						entry.getValue(), entry.getKey(), processedEntityFields,
+						processedEntityFieldMaps));
 			}
 
 			schema.addExtension(
@@ -97,49 +98,6 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		throws InvalidSyntaxException {
 
 		_bundleContext = bundleContext;
-	}
-
-	private String _filterRedundantField(String field) {
-		String[] parts = field.split("/");
-		List<String> reducedParts = new ArrayList<>();
-
-		int consecutiveCount = 1;
-		boolean inInitialRedundancy = true;
-
-		for (int i = 0; i < parts.length; i++) {
-			if ((i > 0) && Objects.equals(parts[i], parts[i - 1])) {
-				consecutiveCount++;
-			}
-			else {
-				consecutiveCount = 1;
-			}
-
-			if (inInitialRedundancy && ((consecutiveCount % 2) == 0)) {
-				if (!reducedParts.isEmpty() &&
-					Objects.equals(
-						reducedParts.get(reducedParts.size() - 1), parts[i])) {
-
-					reducedParts.remove(reducedParts.size() - 1);
-				}
-
-				continue;
-			}
-
-			if (!reducedParts.isEmpty() &&
-				Objects.equals(
-					reducedParts.get(reducedParts.size() - 1), parts[i])) {
-
-				continue;
-			}
-
-			reducedParts.add(parts[i]);
-
-			if ((consecutiveCount == 1) && (i > 0)) {
-				inInitialRedundancy = false;
-			}
-		}
-
-		return String.join("/", reducedParts);
 	}
 
 	private Map<String, EntityField> _getEntityFieldsMap(
@@ -253,7 +211,8 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 
 	private Set<String> _getFilterableFieldNames(
 		EntityField entityField, String fieldName,
-		Set<EntityField> processedEntityFields) {
+		Set<EntityField> processedEntityFields,
+		Set<Map<String, EntityField>> processedEntityFieldMaps) {
 
 		if (!processedEntityFields.add(entityField)) {
 			return new HashSet<>();
@@ -262,7 +221,7 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		if (!(entityField instanceof ComplexEntityField)) {
 			Set<String> singleFieldSet = new HashSet<>();
 
-			singleFieldSet.add(_filterRedundantField(fieldName));
+			singleFieldSet.add(fieldName);
 
 			return singleFieldSet;
 		}
@@ -272,15 +231,20 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		Map<String, EntityField> entityFieldsMap =
 			complexEntityField.getEntityFieldsMap();
 
+		if (!processedEntityFieldMaps.add(entityFieldsMap)) {
+			return new HashSet<>();
+		}
+
 		Set<String> filterableFieldNames = new HashSet<>();
 
 		for (Map.Entry<String, EntityField> entry :
 				entityFieldsMap.entrySet()) {
 
-			filterableFieldNames.addAll(
-				_getFilterableFieldNames(
-					entry.getValue(), fieldName + "/" + entry.getKey(),
-					processedEntityFields));
+			Set<String> nestedFilterableFields = _getFilterableFieldNames(
+				entry.getValue(), fieldName + "/" + entry.getKey(),
+				processedEntityFields, processedEntityFieldMaps);
+
+			filterableFieldNames.addAll(nestedFilterableFields);
 		}
 
 		return filterableFieldNames;
