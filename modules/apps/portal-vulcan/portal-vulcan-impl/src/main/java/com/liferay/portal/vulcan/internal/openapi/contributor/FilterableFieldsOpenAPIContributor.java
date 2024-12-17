@@ -24,11 +24,8 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -74,20 +71,20 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 				continue;
 			}
 
-			Set<EntityField> processedEntityFields = new HashSet<>();
-			Set<String> filterableFieldNames = new TreeSet<>();
+			Map<EntityField, Integer> entityFieldsDepth = new HashMap<>();
+			Map<EntityField, String> filterableFields = new HashMap<>();
 
 			for (Map.Entry<String, EntityField> entry :
 					entityFieldsMap.entrySet()) {
 
-				filterableFieldNames.addAll(
-					_getFilterableFieldNames(
-						entry.getValue(), entry.getKey(),
-						processedEntityFields));
+				_contributeToFilterableFields(
+					0, entry.getValue(), entityFieldsDepth, entry.getKey(),
+					filterableFields);
 			}
 
 			schema.addExtension(
-				"x-filterable", new ArrayList<>(filterableFieldNames));
+				"x-filterable",
+				ListUtil.sort(new ArrayList<>(filterableFields.values())));
 		}
 	}
 
@@ -96,6 +93,47 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		throws InvalidSyntaxException {
 
 		_bundleContext = bundleContext;
+	}
+
+	private void _contributeToFilterableFields(
+		int depth, EntityField entityField,
+		Map<EntityField, Integer> entityFieldsDepth, String fieldName,
+		Map<EntityField, String> filterableFiels) {
+
+		if (!(entityField instanceof ComplexEntityField)) {
+			entityFieldsDepth.compute(
+				entityField,
+				(key, previousDepth) -> {
+					if ((previousDepth == null) || (previousDepth > depth)) {
+						filterableFiels.put(entityField, fieldName);
+
+						return depth;
+					}
+
+					return previousDepth;
+				});
+
+			return;
+		}
+
+		ComplexEntityField complexEntityField = (ComplexEntityField)entityField;
+
+		if (entityFieldsDepth.containsKey(entityField)) {
+			return;
+		}
+
+		entityFieldsDepth.put(entityField, depth);
+
+		Map<String, EntityField> entityFieldsMap =
+			complexEntityField.getEntityFieldsMap();
+
+		for (Map.Entry<String, EntityField> entry :
+				entityFieldsMap.entrySet()) {
+
+			_contributeToFilterableFields(
+				depth + 1, entry.getValue(), entityFieldsDepth,
+				fieldName + "/" + entry.getKey(), filterableFiels);
+		}
 	}
 
 	private Map<String, EntityField> _getEntityFieldsMap(
@@ -205,42 +243,6 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 		}
 
 		return resources;
-	}
-
-	private Set<String> _getFilterableFieldNames(
-		EntityField entityField, String fieldName,
-		Set<EntityField> processedEntityFields) {
-
-		if (!processedEntityFields.add(entityField)) {
-			return new HashSet<>();
-		}
-
-		if (!(entityField instanceof ComplexEntityField)) {
-			Set<String> singleFieldSet = new HashSet<>();
-
-			singleFieldSet.add(fieldName);
-
-			return singleFieldSet;
-		}
-
-		ComplexEntityField complexEntityField = (ComplexEntityField)entityField;
-
-		Map<String, EntityField> entityFieldsMap =
-			complexEntityField.getEntityFieldsMap();
-
-		Set<String> filterableFieldNames = new HashSet<>();
-
-		for (Map.Entry<String, EntityField> entry :
-				entityFieldsMap.entrySet()) {
-
-			Set<String> nestedFilterableFields = _getFilterableFieldNames(
-				entry.getValue(), fieldName + "/" + entry.getKey(),
-				processedEntityFields);
-
-			filterableFieldNames.addAll(nestedFilterableFields);
-		}
-
-		return filterableFieldNames;
 	}
 
 	private String _getJaxRsApplicationName(OpenAPIContext openAPIContext)
