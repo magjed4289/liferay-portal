@@ -49,7 +49,7 @@ public class FilterableFieldsOpenAPIContributor implements OpenAPIContributor {
 	public void contribute(OpenAPI openAPI, OpenAPIContext openAPIContext)
 		throws Exception {
 
-		if (openAPIContext == null) {
+		if ((openAPIContext == null) || (openAPI.getComponents() == null)) {
 			return;
 		}
 
