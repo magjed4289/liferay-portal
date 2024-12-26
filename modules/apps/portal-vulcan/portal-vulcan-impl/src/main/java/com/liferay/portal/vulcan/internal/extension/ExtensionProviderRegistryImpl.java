@@ -29,6 +29,8 @@ public class ExtensionProviderRegistryImpl
 	public List<ExtensionProvider> getExtensionProviders(
 		long companyId, String className) {
 
+		System.out.println(companyId);
+
 		return TransformUtil.transformToList(
 			_serviceTracker.getServices(new ExtensionProvider[0]),
 			extensionProvider -> {
