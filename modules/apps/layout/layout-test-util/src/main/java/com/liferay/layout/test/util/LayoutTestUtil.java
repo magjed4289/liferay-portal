@@ -98,7 +98,22 @@ public class LayoutTestUtil {
 
 		List<String> columns = layoutTemplate.getColumns();
 
+		if (columns.isEmpty()) {
+			System.err.println(
+				"Columns are empty for layout: " + layout.getPlid());
+		}
+		else {
+			System.out.println("Columns: " + columns);
+		}
+
 		String columnId = columns.get(0);
+
+		System.out.println("Selected columnId: " + columnId);
+
+		System.out.println(userId);
+		System.out.println(layout.getLayoutId());
+		System.out.println(portletId);
+		System.out.println(preferenceMap.entrySet());
 
 		return addPortletToLayout(
 			userId, layout, portletId, columnId, preferenceMap);
