@@ -4396,6 +4396,8 @@ public class ObjectEntryLocalServiceImpl
 		else if (javaTypeClass == String.class) {
 			String string = (String)object;
 
+			System.out.println("TEST");
+
 			if (string == null) {
 				string = StringPool.BLANK;
 			}
