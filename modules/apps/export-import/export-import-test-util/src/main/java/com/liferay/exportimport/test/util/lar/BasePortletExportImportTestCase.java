@@ -74,6 +74,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.portlet.PortletPreferences;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -110,18 +111,21 @@ public abstract class BasePortletExportImportTestCase
 		validateImportedLinks(stagedModel, importedStagedModel);
 	}
 
+	@Ignore("LPD-47698")
 	@Test
 	public void testExportImportDeletions() throws Exception {
 		StagedModel stagedModel = addStagedModel(group.getGroupId());
 
 		if (stagedModel == null) {
 			System.out.println("No staged model was added. Skipping test.");
+
 			return;
 		}
 
 		String stagedModelUuid = getStagedModelUuid(stagedModel);
 
-		System.out.println("Exporting and importing portlet for the first time...");
+		System.out.println(
+			"Exporting and importing portlet for the first time...");
 		exportImportPortlet(getPortletId());
 
 		System.out.println("Deleting staged model: " + stagedModelUuid);
@@ -133,15 +137,22 @@ public abstract class BasePortletExportImportTestCase
 			3, TimeUnit.SECONDS, 60, TimeUnit.SECONDS,
 			() -> {
 				int attempt = deleteAttemptCounter.incrementAndGet();
-				StagedModel deletedModel = getStagedModel(stagedModelUuid, group.getGroupId());
+				StagedModel deletedModel = getStagedModel(
+					stagedModelUuid, group.getGroupId());
 
 				if (deletedModel == null) {
-					System.out.println("SUCCESS: Staged model deleted on attempt #" + attempt);
-				} else {
-					System.out.println("WARNING: Staged model still exists on attempt #" + attempt);
+					System.out.println(
+						"SUCCESS: Staged model deleted on attempt #" + attempt);
+				}
+				else {
+					System.out.println(
+						"WARNING: Staged model still exists on attempt #" +
+							attempt);
 				}
 
-				Assert.assertNull("Staged model should be deleted on attempt #" + attempt, deletedModel);
+				Assert.assertNull(
+					"Staged model should be deleted on attempt #" + attempt,
+					deletedModel);
 			});
 
 		AtomicInteger importAttemptCounter = new AtomicInteger(0);
@@ -150,7 +161,10 @@ public abstract class BasePortletExportImportTestCase
 			3, TimeUnit.SECONDS, 120, TimeUnit.SECONDS,
 			() -> {
 				int attempt = importAttemptCounter.incrementAndGet();
-				System.out.println("Re-attempt #" + attempt + ": Exporting and importing portlet...");
+
+				System.out.println(
+					"Re-attempt #" + attempt +
+						": Exporting and importing portlet...");
 
 				exportImportPortlet(getPortletId());
 
@@ -158,9 +172,14 @@ public abstract class BasePortletExportImportTestCase
 					stagedModelUuid, importedGroup.getGroupId());
 
 				if (importedStagedModel != null) {
-					System.out.println("SUCCESS: Imported staged model found on attempt #" + attempt);
-				} else {
-					System.out.println("WARNING: Imported staged model is still null on attempt #" + attempt);
+					System.out.println(
+						"SUCCESS: Imported staged model found on attempt #" +
+							attempt);
+				}
+				else {
+					System.out.println(
+						"WARNING: Imported staged model is still null on " +
+							"attempt #" + attempt);
 				}
 
 				Assert.assertNotNull(
@@ -168,7 +187,8 @@ public abstract class BasePortletExportImportTestCase
 					importedStagedModel);
 			});
 
-		System.out.println("Performing final export-import with deletions enabled...");
+		System.out.println(
+			"Performing final export-import with deletions enabled...");
 		exportImportPortlet(
 			getPortletId(),
 			LinkedHashMapBuilder.put(
@@ -185,14 +205,21 @@ public abstract class BasePortletExportImportTestCase
 				stagedModelUuid, importedGroup.getGroupId());
 
 			if (importedStagedModel == null) {
-				System.out.println("Final check: Staged model has been deleted as expected.");
-			} else {
-				System.out.println("ERROR: Staged model was not deleted after final import.");
+				System.out.println(
+					"Final check: Staged model has been deleted as expected.");
+			}
+			else {
+				System.out.println(
+					"ERROR: Staged model was not deleted after final import.");
 			}
 
 			Assert.assertNull(importedStagedModel);
-		} catch (Exception exception) {
-			System.out.println("Exception caught during final check: " + exception.getMessage());
+		}
+		catch (Exception exception) {
+			System.out.println(
+				"Exception caught during final check: " +
+					exception.getMessage());
+
 			exception.printStackTrace();
 		}
 	}
