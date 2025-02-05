@@ -10,4 +10,5 @@ type Site = {
 	name?: string;
 	templateKey?: number;
 	templateType?: string;
+	externalReferenceCode?: string;
 };
