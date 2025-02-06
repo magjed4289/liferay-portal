@@ -104,16 +104,12 @@ definition {
 		var companyId = JSONCompany._getCachedCompanyId(portalInstanceName = ${portalInstanceName});
 
 		if (${companyId} == "") {
+			User.firstLoginPG();
+
 			var curl = '''
 				${portalURL}/api/jsonws/company/get-company-by-virtual-host/virtual-host/${portalInstanceName} \
 					-u ${creatorEmailAddress}:${creatorPassword}
 			''';
-
-			echo("THE RESLT OF: ${portalURL}/api/jsonws/company/get-company-by-virtual-host/virtual-host/${portalInstanceName}");
-
-			var result = JSONCurlUtil.get(${curl});
-			
-			echo(${result});
 
 			var companyId = JSONCurlUtil.get(${curl}, "$['companyId']");
 		}
