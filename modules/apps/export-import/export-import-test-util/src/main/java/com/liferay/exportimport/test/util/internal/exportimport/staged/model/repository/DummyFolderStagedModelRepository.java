@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.junit.Assert;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -60,7 +61,7 @@ public class DummyFolderStagedModelRepository
 
 	@Override
 	public DummyFolder addStagedModel(
-		PortletDataContext portletDataContext, DummyFolder dummyFolder1)
+			PortletDataContext portletDataContext, DummyFolder dummyFolder1)
 		throws PortalException {
 
 		int size = _dummyFolders.size();
@@ -68,37 +69,54 @@ public class DummyFolderStagedModelRepository
 		int attempt = 0;
 
 		while (attempt < maxAttempts) {
+			System.out.println(
+				"DummyFolderStagedModelRepository.addStagedModel attempt#" +
+					attempt);
+
 			try {
 				if ((portletDataContext != null) &&
 					(portletDataContext.getUserIdStrategy() != null)) {
-					dummyFolder1.setUserId(portletDataContext.getUserId(dummyFolder1.getUserUuid()));
+
+					dummyFolder1.setUserId(
+						portletDataContext.getUserId(
+							dummyFolder1.getUserUuid()));
 				}
 
 				DummyFolder dummyFolder2 = new DummyFolder();
+
 				dummyFolder1.setId(dummyFolder2.getId());
 
 				_dummyFolders.add(dummyFolder1);
 
 				int newSize = _dummyFolders.size();
-				Assert.assertEquals("Size after adding dummyFolder1 should be " + (size + 1), size + 1, newSize);
+
+				Assert.assertEquals(
+					"Size after adding dummyFolder1 should be " + (size + 1),
+					size + 1, newSize);
 
 				return dummyFolder1;
-			} catch (AssertionError assertionError) {
-				if (attempt >= maxAttempts - 1) {
-					throw new PortalException("Failed to add the staged model after retries", assertionError);
+			}
+			catch (AssertionError assertionError) {
+				if (attempt >= (maxAttempts - 1)) {
+					throw new PortalException(
+						"Failed to add the staged model after retries",
+						assertionError);
 				}
 			}
 
 			try {
 				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+			}
+			catch (InterruptedException interruptedException) {
+				Thread.currentThread(
+				).interrupt();
 			}
 
 			attempt++;
 		}
 
-		throw new PortalException("Failed to add the staged model after retries");
+		throw new PortalException(
+			"Failed to add the staged model after retries");
 	}
 
 	@Override
@@ -137,16 +155,24 @@ public class DummyFolderStagedModelRepository
 		return fetchStagedModelByUuidAndGroupId(uuid, groupId);
 	}
 
-	public DummyFolder fetchStagedModelByUuidAndGroupId(String uuid, long groupId) {
+	public DummyFolder fetchStagedModelByUuidAndGroupId(
+		String uuid, long groupId) {
+
 		int maxAttempts = 30;
 		int attempt = 0;
 		DummyFolder fetchedFolder = null;
 
 		while (attempt < maxAttempts) {
-			System.out.println("Attempt #"+ attempt);
+			System.out.println(
+				"DummyFolderStagedModelRepository." +
+					"fetchStagedModelByUuidAndGroupId attempt #" + attempt);
+
 			for (DummyFolder dummyFolder : _dummyFolders) {
-				if (Objects.equals(uuid, dummyFolder.getUuid()) && (groupId == dummyFolder.getGroupId())) {
+				if (Objects.equals(uuid, dummyFolder.getUuid()) &&
+					(groupId == dummyFolder.getGroupId())) {
+
 					fetchedFolder = dummyFolder;
+
 					break;
 				}
 			}
@@ -157,8 +183,10 @@ public class DummyFolderStagedModelRepository
 
 			try {
 				TimeUnit.SECONDS.sleep(2);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+			}
+			catch (InterruptedException interruptedException) {
+				Thread.currentThread(
+				).interrupt();
 			}
 
 			attempt++;

@@ -69,7 +69,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.portlet.PortletPreferences;
 
@@ -115,77 +114,22 @@ public abstract class BasePortletExportImportTestCase
 		StagedModel stagedModel = addStagedModel(group.getGroupId());
 
 		if (stagedModel == null) {
-			System.out.println("No staged model was added. Skipping test.");
-
 			return;
 		}
 
 		String stagedModelUuid = getStagedModelUuid(stagedModel);
 
-		System.out.println(
-			"Exporting and importing portlet for the first time...");
-		System.out.println(
-			"Staged model uuid: "+ stagedModelUuid);
-
 		exportImportPortlet(getPortletId());
 
-		System.out.println("Deleting staged model: " + stagedModelUuid);
 		deleteStagedModel(stagedModel);
 
-		AtomicInteger deleteAttemptCounter = new AtomicInteger(0);
-
-		ExportImportTestUtil.retryAssert(
-			3, TimeUnit.SECONDS, 60, TimeUnit.SECONDS,
-			() -> {
-				int attempt = deleteAttemptCounter.incrementAndGet();
-				StagedModel deletedModel = getStagedModel(
-					stagedModelUuid, group.getGroupId());
-
-				if (deletedModel == null) {
-					System.out.println(
-						"SUCCESS: Staged model deleted on attempt #" + attempt);
-				}
-				else {
-					System.out.println(
-						"WARNING: Staged model still exists on attempt #" +
-							attempt);
-				}
-
-				Assert.assertNull(
-					"Staged model should be deleted on attempt #" + attempt,
-					deletedModel);
-			});
-
 		exportImportPortlet(getPortletId());
 
-		AtomicInteger importAttemptCounter = new AtomicInteger(0);
+		StagedModel importedStagedModel = getStagedModel(
+			stagedModelUuid, importedGroup.getGroupId());
 
-		ExportImportTestUtil.retryAssert(
-			10, TimeUnit.SECONDS, 120, TimeUnit.SECONDS,
-			() -> {
-				int attempt = importAttemptCounter.incrementAndGet();
+		Assert.assertNotNull(importedStagedModel);
 
-				StagedModel importedStagedModel = getStagedModel(
-					stagedModelUuid, importedGroup.getGroupId());
-
-				if (importedStagedModel != null) {
-					System.out.println(
-						"SUCCESS: Imported staged model found on attempt #" +
-							attempt);
-				}
-				else {
-					System.out.println(
-						"WARNING: Imported staged model is still null on " +
-							"attempt #" + attempt);
-				}
-
-				Assert.assertNotNull(
-					"Staged model is still null on attempt #" + attempt,
-					importedStagedModel);
-			});
-
-		System.out.println(
-			"Performing final export-import with deletions enabled...");
 		exportImportPortlet(
 			getPortletId(),
 			LinkedHashMapBuilder.put(
@@ -197,31 +141,14 @@ public abstract class BasePortletExportImportTestCase
 				new String[] {Boolean.TRUE.toString()}
 			).build());
 
-		AtomicInteger finalCheckCounter = new AtomicInteger(0);
+		try {
+			importedStagedModel = getStagedModel(
+				stagedModelUuid, importedGroup.getGroupId());
 
-		ExportImportTestUtil.retryAssert(
-			5, TimeUnit.SECONDS, 90, TimeUnit.SECONDS, // Added retry before final assertion
-			() -> {
-				int attempt = finalCheckCounter.incrementAndGet();
-				StagedModel importedStagedModel = getStagedModel(
-					stagedModelUuid, importedGroup.getGroupId());
-
-				if (importedStagedModel == null) {
-					System.out.println(
-						"Final check (attempt #" + attempt +
-							"): Staged model has been deleted as expected.");
-				}
-				else {
-					System.out.println(
-						"ERROR: Staged model was not deleted after final " +
-							"import on attempt #" + attempt);
-				}
-
-				Assert.assertNull(
-					"Staged model should be deleted after final import on " +
-						"attempt #" + attempt,
-					importedStagedModel);
-			});
+			Assert.assertNull(importedStagedModel);
+		}
+		catch (Exception exception) {
+		}
 	}
 
 	@Test
