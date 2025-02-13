@@ -35,16 +35,13 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
-
-import org.junit.Assert;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -64,59 +61,20 @@ public class DummyFolderStagedModelRepository
 			PortletDataContext portletDataContext, DummyFolder dummyFolder1)
 		throws PortalException {
 
-		int size = _dummyFolders.size();
-		int maxAttempts = 30;
-		int attempt = 0;
+		if ((portletDataContext != null) &&
+			(portletDataContext.getUserIdStrategy() != null)) {
 
-		while (attempt < maxAttempts) {
-			System.out.println(
-				"DummyFolderStagedModelRepository.addStagedModel attempt#" +
-					attempt);
-
-			try {
-				if ((portletDataContext != null) &&
-					(portletDataContext.getUserIdStrategy() != null)) {
-
-					dummyFolder1.setUserId(
-						portletDataContext.getUserId(
-							dummyFolder1.getUserUuid()));
-				}
-
-				DummyFolder dummyFolder2 = new DummyFolder();
-
-				dummyFolder1.setId(dummyFolder2.getId());
-
-				_dummyFolders.add(dummyFolder1);
-
-				int newSize = _dummyFolders.size();
-
-				Assert.assertEquals(
-					"Size after adding dummyFolder1 should be " + (size + 1),
-					size + 1, newSize);
-
-				return dummyFolder1;
-			}
-			catch (AssertionError assertionError) {
-				if (attempt >= (maxAttempts - 1)) {
-					throw new PortalException(
-						"Failed to add the staged model after retries",
-						assertionError);
-				}
-			}
-
-			try {
-				Thread.sleep(2000);
-			}
-			catch (InterruptedException interruptedException) {
-				Thread.currentThread(
-				).interrupt();
-			}
-
-			attempt++;
+			dummyFolder1.setUserId(
+				portletDataContext.getUserId(dummyFolder1.getUserUuid()));
 		}
 
-		throw new PortalException(
-			"Failed to add the staged model after retries");
+		DummyFolder dummyFolder2 = new DummyFolder();
+
+		dummyFolder1.setId(dummyFolder2.getId());
+
+		_dummyFolders.add(dummyFolder1);
+
+		return dummyFolder1;
 	}
 
 	@Override
@@ -158,38 +116,12 @@ public class DummyFolderStagedModelRepository
 	public DummyFolder fetchStagedModelByUuidAndGroupId(
 		String uuid, long groupId) {
 
-		int maxAttempts = 30;
-		int attempt = 0;
-		DummyFolder fetchedFolder = null;
+		for (DummyFolder dummyFolder : _dummyFolders) {
+			if (Objects.equals(uuid, dummyFolder.getUuid()) &&
+				(groupId == dummyFolder.getGroupId())) {
 
-		while (attempt < maxAttempts) {
-			System.out.println(
-				"DummyFolderStagedModelRepository." +
-					"fetchStagedModelByUuidAndGroupId attempt #" + attempt);
-
-			for (DummyFolder dummyFolder : _dummyFolders) {
-				if (Objects.equals(uuid, dummyFolder.getUuid()) &&
-					(groupId == dummyFolder.getGroupId())) {
-
-					fetchedFolder = dummyFolder;
-
-					break;
-				}
+				return dummyFolder;
 			}
-
-			if (fetchedFolder != null) {
-				return fetchedFolder;
-			}
-
-			try {
-				TimeUnit.SECONDS.sleep(2);
-			}
-			catch (InterruptedException interruptedException) {
-				Thread.currentThread(
-				).interrupt();
-			}
-
-			attempt++;
 		}
 
 		return null;
@@ -482,6 +414,7 @@ public class DummyFolderStagedModelRepository
 		return _dummyFolders.get(i);
 	}
 
-	private final List<DummyFolder> _dummyFolders = new ArrayList<>();
+	private final List<DummyFolder> _dummyFolders =
+		new CopyOnWriteArrayList<>();
 
 }
