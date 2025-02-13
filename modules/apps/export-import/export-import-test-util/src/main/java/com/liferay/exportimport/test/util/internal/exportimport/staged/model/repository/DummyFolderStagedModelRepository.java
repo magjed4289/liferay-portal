@@ -35,12 +35,13 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 import org.osgi.service.component.annotations.Component;
@@ -72,7 +73,9 @@ public class DummyFolderStagedModelRepository
 
 		dummyFolder1.setId(dummyFolder2.getId());
 
-		_dummyFolders.add(dummyFolder1);
+		synchronized (_dummyFolders) {
+			_dummyFolders.add(dummyFolder1);
+		}
 
 		return dummyFolder1;
 	}
@@ -81,12 +84,15 @@ public class DummyFolderStagedModelRepository
 	public void deleteStagedModel(DummyFolder dummyFolder)
 		throws PortalException {
 
-		if (_dummyFolders.remove(dummyFolder)) {
-			systemEventLocalService.addSystemEvent(
-				0, dummyFolder.getGroupId(), StringPool.BLANK,
-				dummyFolder.getModelClassName(), dummyFolder.getPrimaryKey(),
-				dummyFolder.getUuid(), StringPool.BLANK,
-				SystemEventConstants.TYPE_DELETE, StringPool.BLANK);
+		synchronized (_dummyFolders) {
+			if (_dummyFolders.remove(dummyFolder)) {
+				systemEventLocalService.addSystemEvent(
+					0, dummyFolder.getGroupId(), StringPool.BLANK,
+					dummyFolder.getModelClassName(),
+					dummyFolder.getPrimaryKey(), dummyFolder.getUuid(),
+					StringPool.BLANK, SystemEventConstants.TYPE_DELETE,
+					StringPool.BLANK);
+			}
 		}
 	}
 
@@ -95,17 +101,21 @@ public class DummyFolderStagedModelRepository
 			String uuid, long groupId, String className, String extraData)
 		throws PortalException {
 
-		_dummyFolders.removeIf(
-			dummyFolder ->
-				Objects.equals(uuid, dummyFolder.getUuid()) &&
-				(groupId == dummyFolder.getGroupId()));
+		synchronized (_dummyFolders) {
+			_dummyFolders.removeIf(
+				dummyFolder ->
+					Objects.equals(uuid, dummyFolder.getUuid()) &&
+					(groupId == dummyFolder.getGroupId()));
+		}
 	}
 
 	@Override
 	public void deleteStagedModels(PortletDataContext portletDataContext)
 		throws PortalException {
 
-		_dummyFolders.clear();
+		synchronized (_dummyFolders) {
+			_dummyFolders.clear();
+		}
 	}
 
 	@Override
@@ -116,11 +126,13 @@ public class DummyFolderStagedModelRepository
 	public DummyFolder fetchStagedModelByUuidAndGroupId(
 		String uuid, long groupId) {
 
-		for (DummyFolder dummyFolder : _dummyFolders) {
-			if (Objects.equals(uuid, dummyFolder.getUuid()) &&
-				(groupId == dummyFolder.getGroupId())) {
+		synchronized (_dummyFolders) {
+			for (DummyFolder dummyFolder : _dummyFolders) {
+				if (Objects.equals(uuid, dummyFolder.getUuid()) &&
+					(groupId == dummyFolder.getGroupId())) {
 
-				return dummyFolder;
+					return dummyFolder;
+				}
 			}
 		}
 
@@ -131,16 +143,21 @@ public class DummyFolderStagedModelRepository
 	public List<DummyFolder> fetchStagedModelsByUuidAndCompanyId(
 		String uuid, long companyId) {
 
-		return ListUtil.filter(
-			_dummyFolders,
-			dummyFolder ->
-				Objects.equals(uuid, dummyFolder.getUuid()) &&
-				(companyId == dummyFolder.getCompanyId()));
+		synchronized (_dummyFolders) {
+			return ListUtil.filter(
+				_dummyFolders,
+				dummyFolder ->
+					Objects.equals(uuid, dummyFolder.getUuid()) &&
+					(companyId == dummyFolder.getCompanyId()));
+		}
 	}
 
 	public List<DummyFolder> getDummyFolders(long groupId) {
-		return ListUtil.filter(
-			_dummyFolders, dummyFolder -> groupId == dummyFolder.getGroupId());
+		synchronized (_dummyFolders) {
+			return ListUtil.filter(
+				_dummyFolders,
+				dummyFolder -> groupId == dummyFolder.getGroupId());
+		}
 	}
 
 	@Override
@@ -157,7 +174,11 @@ public class DummyFolderStagedModelRepository
 
 					StagedModelType stagedModelType = getStagedModelType();
 
-					long modelAdditionCount = _dummyFolders.size();
+					long modelAdditionCount;
+
+					synchronized (_dummyFolders) {
+						modelAdditionCount = _dummyFolders.size();
+					}
 
 					manifestSummary.addModelAdditionCount(
 						stagedModelType, modelAdditionCount);
@@ -287,9 +308,11 @@ public class DummyFolderStagedModelRepository
 	}
 
 	public DummyFolder getFolder(long folderId) {
-		for (DummyFolder dummyFolder : _dummyFolders) {
-			if (folderId == dummyFolder.getId()) {
-				return dummyFolder;
+		synchronized (_dummyFolders) {
+			for (DummyFolder dummyFolder : _dummyFolders) {
+				if (folderId == dummyFolder.getId()) {
+					return dummyFolder;
+				}
 			}
 		}
 
@@ -405,16 +428,18 @@ public class DummyFolderStagedModelRepository
 	private DummyFolder _fetchDummyFolder(DummyFolder dummyFolder)
 		throws NoSuchModelException {
 
-		int i = _dummyFolders.indexOf(dummyFolder);
+		synchronized (_dummyFolders) {
+			int i = _dummyFolders.indexOf(dummyFolder);
 
-		if (i < 0) {
-			throw new NoSuchModelException();
+			if (i < 0) {
+				throw new NoSuchModelException();
+			}
+
+			return _dummyFolders.get(i);
 		}
-
-		return _dummyFolders.get(i);
 	}
 
 	private final List<DummyFolder> _dummyFolders =
-		new CopyOnWriteArrayList<>();
+		Collections.synchronizedList(new ArrayList<>());
 
 }
