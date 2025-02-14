@@ -6,6 +6,7 @@
 package com.liferay.exportimport.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.exportimport.kernel.lar.ExportImportDateUtil;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerKeys;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepository;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepositoryRegistryUtil;
@@ -13,19 +14,27 @@ import com.liferay.exportimport.test.util.constants.DummyFolderPortletKeys;
 import com.liferay.exportimport.test.util.lar.BasePortletExportImportTestCase;
 import com.liferay.exportimport.test.util.model.DummyFolder;
 import com.liferay.exportimport.test.util.model.util.DummyFolderTestUtil;
+import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.portal.dao.orm.hibernate.DynamicQueryFactoryImpl;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.StagedModel;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
+import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
+import javax.portlet.PortletPreferences;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -84,6 +93,101 @@ public class DummyFolderExportImportTest
 	@Override
 	@Test
 	public void testExportImportAssetLinks() throws Exception {
+	}
+
+	@Override
+	@Test
+	public void testExportImportDeletions() throws Exception {
+		StagedModel stagedModel = addStagedModel(group.getGroupId());
+
+		if (stagedModel == null) {
+			return;
+		}
+
+		String stagedModelUuid = getStagedModelUuid(stagedModel);
+
+		exportImportPortlet(getPortletId());
+
+		deleteStagedModel(stagedModel);
+
+		exportImportPortlet(getPortletId());
+
+		StagedModel importedStagedModel = getStagedModel(
+			stagedModelUuid, importedGroup.getGroupId());
+
+		Assert.assertNotNull(importedStagedModel);
+
+		exportImportPortlet(
+			getPortletId(),
+			LinkedHashMapBuilder.put(
+				PortletDataHandlerKeys.DELETIONS,
+				new String[] {Boolean.TRUE.toString()}
+			).build(),
+			LinkedHashMapBuilder.put(
+				PortletDataHandlerKeys.DELETIONS,
+				new String[] {Boolean.TRUE.toString()}
+			).build());
+
+		try {
+			importedStagedModel = getStagedModel(
+				stagedModelUuid, importedGroup.getGroupId());
+
+			Assert.assertNull(importedStagedModel);
+		}
+		catch (Exception exception) {
+		}
+	}
+
+	@Override
+	@Test
+	public void testUpdateLastPublishDate() throws Exception {
+		Date lastPublishDate = new Date(System.currentTimeMillis() - Time.HOUR);
+
+		Date stagedModelCreationDate = new Date(
+			lastPublishDate.getTime() + Time.MINUTE);
+
+		StagedModel stagedModel = addStagedModel(
+			group.getGroupId(), stagedModelCreationDate);
+
+		if (stagedModel == null) {
+			return;
+		}
+
+		LayoutTestUtil.addPortletToLayout(
+			TestPropsValues.getUserId(), layout, getPortletId(), "column-1",
+			new HashMap<>());
+
+		PortletPreferences portletPreferences =
+			PortletPreferencesFactoryUtil.getStrictPortletSetup(
+				layout, getPortletId());
+
+		portletPreferences.setValue(
+			"last-publish-date", String.valueOf(lastPublishDate.getTime()));
+
+		portletPreferences.store();
+
+		portletPreferences =
+			PortletPreferencesFactoryUtil.getStrictPortletSetup(
+				layout, getPortletId());
+
+		Date oldLastPublishDate = ExportImportDateUtil.getLastPublishDate(
+			portletPreferences);
+
+		publishPortlet(getPortletId());
+
+		portletPreferences =
+			PortletPreferencesFactoryUtil.getStrictPortletSetup(
+				layout, getPortletId());
+
+		Date newLastPublishDate = ExportImportDateUtil.getLastPublishDate(
+			portletPreferences);
+
+		Assert.assertTrue(newLastPublishDate.after(oldLastPublishDate));
+
+		StagedModel importedStagedModel = getStagedModel(
+			getStagedModelUuid(stagedModel), importedGroup.getGroupId());
+
+		Assert.assertNotNull(importedStagedModel);
 	}
 
 	@Override
