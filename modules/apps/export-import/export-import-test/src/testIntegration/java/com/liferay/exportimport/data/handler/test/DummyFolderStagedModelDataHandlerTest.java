@@ -124,6 +124,9 @@ public class DummyFolderStagedModelDataHandlerTest
 	@After
 	@Override
 	public void tearDown() throws Exception {
+		_dummyFolderStagedModelRepository.deleteStagedModels(
+			portletDataContext);
+
 		_serviceRegistration.unregister();
 
 		super.tearDown();

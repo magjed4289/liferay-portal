@@ -113,9 +113,9 @@ public class DummyFolderStagedModelRepository
 	public void deleteStagedModels(PortletDataContext portletDataContext)
 		throws PortalException {
 
-		synchronized (_dummyFolders) {
-			_dummyFolders.clear();
-		}
+		System.out.println("BEFORE CLEANING: "+_dummyFolders.size());
+
+		_dummyFolders.clear();
 	}
 
 	@Override

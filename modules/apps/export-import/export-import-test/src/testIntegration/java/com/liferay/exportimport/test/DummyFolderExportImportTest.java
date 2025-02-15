@@ -7,6 +7,8 @@ package com.liferay.exportimport.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.exportimport.kernel.lar.ExportImportDateUtil;
+import com.liferay.exportimport.kernel.lar.MissingReference;
+import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerKeys;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepository;
 import com.liferay.exportimport.staged.model.repository.StagedModelRepositoryRegistryUtil;
@@ -34,6 +36,7 @@ import java.util.Map;
 
 import javax.portlet.PortletPreferences;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -90,6 +93,14 @@ public class DummyFolderExportImportTest
 			});
 	}
 
+	@After
+	@Override
+	public void tearDown() throws Exception {
+		stagedModelRepository.deleteStagedModels(portletDataContext);
+
+		super.tearDown();
+	}
+
 	@Override
 	@Test
 	public void testExportImportAssetLinks() throws Exception {
@@ -101,16 +112,32 @@ public class DummyFolderExportImportTest
 		StagedModel stagedModel = addStagedModel(group.getGroupId());
 
 		if (stagedModel == null) {
+			System.out.println("NO STAGED MODEL!!!!");
 			return;
 		}
 
 		String stagedModelUuid = getStagedModelUuid(stagedModel);
 
+		DummyFolder dummyFolder = stagedModelRepository.fetchMissingReference(stagedModelUuid,
+			group.getGroupId());
+
+		System.out.println("DUMMY REFFERENCE 1"+dummyFolder);
+
 		exportImportPortlet(getPortletId());
+
+		dummyFolder = stagedModelRepository.fetchMissingReference(stagedModelUuid,
+			group.getGroupId());
+
+		System.out.println("DUMMY REFFERENCE 2"+dummyFolder);
 
 		deleteStagedModel(stagedModel);
 
 		exportImportPortlet(getPortletId());
+
+		dummyFolder = stagedModelRepository.fetchMissingReference(stagedModelUuid,
+			group.getGroupId());
+
+		System.out.println("DUMMY REFFERENCE 3"+dummyFolder);
 
 		StagedModel importedStagedModel = getStagedModel(
 			stagedModelUuid, importedGroup.getGroupId());
@@ -129,6 +156,11 @@ public class DummyFolderExportImportTest
 			).build());
 
 		try {
+			dummyFolder = stagedModelRepository.fetchMissingReference(stagedModelUuid,
+				group.getGroupId());
+
+			System.out.println("DUMMY REFFERENCE 4"+dummyFolder);
+
 			importedStagedModel = getStagedModel(
 				stagedModelUuid, importedGroup.getGroupId());
 
@@ -242,6 +274,7 @@ public class DummyFolderExportImportTest
 			uuid, groupId);
 	}
 
+	protected PortletDataContext portletDataContext;
 	protected StagedModelRepository<DummyFolder> stagedModelRepository;
 
 }
