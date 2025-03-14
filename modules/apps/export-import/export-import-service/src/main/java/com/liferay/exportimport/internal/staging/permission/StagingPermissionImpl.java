@@ -66,6 +66,7 @@ public class StagingPermissionImpl implements StagingPermission {
 		if (!actionId.equals(ActionKeys.ACCESS) &&
 			!actionId.equals(ActionKeys.ACCESS_IN_CONTROL_PANEL) &&
 			!actionId.equals(ActionKeys.ADD_DISCUSSION) &&
+			!actionId.equals(ActionKeys.ADD_DOCUMENT) &&
 			!actionId.equals(ActionKeys.ADD_TO_PAGE) &&
 			!actionId.equals(ActionKeys.ASSIGN_MEMBERS) &&
 			!actionId.equals(ActionKeys.CONFIGURATION) &&
@@ -73,6 +74,7 @@ public class StagingPermissionImpl implements StagingPermission {
 			!actionId.equals(ActionKeys.DELETE) &&
 			!actionId.equals(ActionKeys.DELETE_DISCUSSION) &&
 			!actionId.equals(ActionKeys.DOWNLOAD) &&
+			!actionId.equals(ActionKeys.UPDATE) &&
 			!actionId.equals(ActionKeys.UPDATE_DISCUSSION) &&
 			!actionId.equals(ActionKeys.VIEW) &&
 			group.hasLocalOrRemoteStagingGroup() &&
