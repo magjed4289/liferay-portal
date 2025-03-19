@@ -217,6 +217,8 @@ public class DeletionSystemEventExporter {
 
 		deletionSystemEventElement.addAttribute("class-name", className);
 
+		System.out.println("TEST");
+
 		if (className.equals(FragmentEntry.class.getName())) {
 			try {
 				JSONObject extraDataJSONObject =

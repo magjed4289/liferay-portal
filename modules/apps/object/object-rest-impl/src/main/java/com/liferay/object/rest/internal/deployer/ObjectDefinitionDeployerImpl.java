@@ -489,6 +489,8 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 								"companyId", objectDefinition.getCompanyId()
 							).build())));
 
+				System.out.println("TEST");
+
 				return serviceRegistrationsMap;
 			});
 

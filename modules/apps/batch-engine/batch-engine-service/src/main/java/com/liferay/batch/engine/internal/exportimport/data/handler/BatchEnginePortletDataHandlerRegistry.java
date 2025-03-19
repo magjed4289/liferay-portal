@@ -105,6 +105,8 @@ public class BatchEnginePortletDataHandlerRegistry {
 					(String)serviceReference.getProperty(
 						"batch.engine.task.item.delegate.name"));
 
+			System.out.println("TEST");
+
 			return _bundleContext.registerService(
 				PortletDataHandler.class, batchEnginePortletDataHandler,
 				HashMapDictionaryBuilder.<String, Object>put(

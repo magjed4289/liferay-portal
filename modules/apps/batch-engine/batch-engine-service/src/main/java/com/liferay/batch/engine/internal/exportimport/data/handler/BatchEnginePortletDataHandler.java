@@ -100,6 +100,8 @@ public class BatchEnginePortletDataHandler extends BasePortletDataHandler {
 			PortletPreferences portletPreferences)
 		throws Exception {
 
+		System.out.println("TEST");
+
 		BatchEngineExportTaskExecutor.Result result =
 			_batchEngineExportTaskExecutor.execute(
 				_batchEngineExportTaskService.addBatchEngineExportTask(

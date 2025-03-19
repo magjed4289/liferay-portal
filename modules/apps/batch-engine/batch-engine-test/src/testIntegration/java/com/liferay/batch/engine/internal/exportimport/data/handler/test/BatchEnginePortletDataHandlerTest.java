@@ -115,6 +115,8 @@ public class BatchEnginePortletDataHandlerTest {
 		_objectEntry2 = _addObjectEntry(RandomTestUtil.randomString());
 		_objectEntry3 = _addObjectEntry(RandomTestUtil.randomString());
 
+		System.out.println("TEST");
+
 		Group companyGroup = _stagingGroupHelper.fetchCompanyGroup(
 			_objectDefinition.getCompanyId());
 
