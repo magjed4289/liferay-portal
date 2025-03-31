@@ -43,6 +43,8 @@ public abstract class BaseObjectRelationshipElementsParserImpl<T>
 	protected List<T> parseMany(Object object) {
 		List<T> objects = null;
 
+		System.out.println("TEST");
+
 		if (object instanceof List) {
 			objects = (List<T>)object;
 		}
