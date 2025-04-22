@@ -1853,6 +1853,10 @@ definition {
 
 		SelectFrameTop();
 
+		echo("MY SCREEN");
+
+		takeScreenshot();
+
 		AssertTextEquals.assertPartialText(
 			locator1 = "Message#ERROR",
 			value1 = ${validateErrorMessage});
