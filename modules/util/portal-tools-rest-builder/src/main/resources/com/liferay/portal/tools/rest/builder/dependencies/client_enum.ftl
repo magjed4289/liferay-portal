@@ -1,6 +1,11 @@
 package ${configYAML.apiPackagePath}.client.constant.${escapedVersion};
 
-import jakarta.annotation.Generated;
+<#if useJavax?stringUtil.equals(string, "true")>
+	import javax.annotation.Generated;
+
+<#else>
+	import jakarta.annotation.Generated;
+</#if>
 
 import java.util.Objects;
 

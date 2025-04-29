@@ -3,7 +3,12 @@ package ${configYAML.apiPackagePath}.client.custom.field;
 import ${configYAML.apiPackagePath}.client.function.UnsafeSupplier;
 import ${configYAML.apiPackagePath}.client.json.BaseJSONParser;
 
-import jakarta.annotation.Generated;
+<#if useJavax?stringUtil.equals(string, "true")>
+	import javax.annotation.Generated;
+
+<#else>
+	import jakarta.annotation.Generated;
+</#if>
 
 import java.util.Iterator;
 import java.util.Map;

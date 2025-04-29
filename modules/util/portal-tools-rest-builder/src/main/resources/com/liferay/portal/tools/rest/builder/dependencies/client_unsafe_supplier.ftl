@@ -1,6 +1,11 @@
 package ${configYAML.apiPackagePath}.client.function;
 
-import jakarta.annotation.Generated;
+<#if useJavax?stringUtil.equals(string, "true")>
+	import javax.annotation.Generated;
+
+<#else>
+	import jakarta.annotation.Generated;
+</#if>
 
 /**
  * @author ${configYAML.author}

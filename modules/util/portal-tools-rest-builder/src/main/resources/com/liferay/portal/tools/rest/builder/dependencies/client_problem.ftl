@@ -2,7 +2,12 @@ package ${configYAML.apiPackagePath}.client.problem;
 
 import ${configYAML.apiPackagePath}.client.json.BaseJSONParser;
 
-import jakarta.annotation.Generated;
+<#if useJavax?stringUtil.equals(string, "true")>
+	import javax.annotation.Generated;
+
+<#else>
+	import jakarta.annotation.Generated;
+</#if>
 
 import java.util.Objects;
 
