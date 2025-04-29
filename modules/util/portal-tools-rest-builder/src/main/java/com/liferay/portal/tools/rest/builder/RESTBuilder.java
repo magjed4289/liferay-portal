@@ -158,7 +158,14 @@ public class RESTBuilder {
 			restBuilderArgs.isForceClientVersionDescription(),
 			restBuilderArgs.isForcePredictableOperationId());
 
-		_useJavax = Boolean.TRUE.equals(restBuilderArgs.isUseJavax());
+		int version = _configYAML.getCompatibilityVersion(???);
+
+		if (restBuilderArgs.isUseJavax() != null) {
+			_useJavax = restBuilderArgs.isUseJavax();
+		}
+		else {
+			_useJavax = _isCurrentVersionOlderThanTheFirstJakartaVersion();
+		}
 	}
 
 	public void build() throws Exception {
