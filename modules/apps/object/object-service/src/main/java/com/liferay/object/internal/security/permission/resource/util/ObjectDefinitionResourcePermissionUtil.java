@@ -18,6 +18,8 @@ import com.liferay.object.tree.ObjectDefinitionTreeFactory;
 import com.liferay.object.tree.Tree;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
@@ -68,6 +70,32 @@ public class ObjectDefinitionResourcePermissionUtil {
 			objectDefinition.getCompanyId(), objectDefinition.getPortletId());
 
 		if (portlet != null) {
+			List<ObjectDefinition> allRootObjectDefinitions =
+				objectDefinitionPersistence.findAll();
+
+			for (ObjectDefinition other : allRootObjectDefinitions) {
+				if (other.isPortlet() && !other.isRootDescendantNode() &&
+					!Objects.equals(
+						other.getObjectDefinitionId(),
+						objectDefinition.getObjectDefinitionId()) &&
+					Objects.equals(
+						other.getPortletId(),
+						objectDefinition.getPortletId())) {
+
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Skipping portlet resource registration for objectDefinitionId " +
+								objectDefinition.getObjectDefinitionId() +
+									" because portletId " +
+										objectDefinition.getPortletId() +
+											" is already in use by objectDefinitionId " +
+												other.getObjectDefinitionId());
+					}
+
+					return;
+				}
+			}
+
 			resourceActions.populatePortletResource(
 				portlet,
 				ObjectDefinitionResourcePermissionUtil.class.getClassLoader(),
@@ -362,6 +390,9 @@ public class ObjectDefinitionResourcePermissionUtil {
 	}
 
 	private static final int _INITIAL_WEIGHT = 3;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ObjectDefinitionResourcePermissionUtil.class);
 
 	private static final Map<ObjectDefinition, Document>
 		_objectDefinitionResourceActionDocumentsMap = new ConcurrentHashMap<>();
