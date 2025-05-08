@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyInfoLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.test.rule.Inject;
@@ -112,6 +113,7 @@ public class CompanyInfoLocalServiceTest {
 			_company.getKeyObj());
 	}
 
+	@DeleteAfterTestRun
 	private static Company _company;
 
 	@Inject
