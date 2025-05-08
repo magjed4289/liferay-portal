@@ -53,6 +53,37 @@ public class ObjectDefinitionResourcePermissionUtil {
 			return;
 		}
 
+		Portlet portlet = portletLocalService.getPortletById(
+			objectDefinition.getCompanyId(), objectDefinition.getPortletId());
+
+		if (portlet != null) {
+			List<ObjectDefinition> allRootObjectDefinitions =
+				objectDefinitionPersistence.findAll();
+
+			for (ObjectDefinition other : allRootObjectDefinitions) {
+				if (other.isPortlet() && !other.isRootDescendantNode() &&
+					!Objects.equals(
+						other.getObjectDefinitionId(),
+						objectDefinition.getObjectDefinitionId()) &&
+					Objects.equals(
+						other.getPortletId(),
+						objectDefinition.getPortletId())) {
+
+					System.out.println(
+						StringBundler.concat(
+							"Skipping resource registration for ",
+							"objectDefinitionId ",
+							objectDefinition.getObjectDefinitionId(),
+							" because portletId ",
+							objectDefinition.getPortletId(),
+							" is already in use by objectDefinitionId ",
+							other.getObjectDefinitionId()));
+
+					return;
+				}
+			}
+		}
+
 		List<String> rootDescendantNodeObjectDefinitionClassNames =
 			new ArrayList<>();
 
@@ -63,9 +94,6 @@ public class ObjectDefinitionResourcePermissionUtil {
 			standaloneObjectActions);
 
 		resourceActions.populateModelResources(document);
-
-		Portlet portlet = portletLocalService.getPortletById(
-			objectDefinition.getCompanyId(), objectDefinition.getPortletId());
 
 		if (portlet != null) {
 			resourceActions.populatePortletResource(
