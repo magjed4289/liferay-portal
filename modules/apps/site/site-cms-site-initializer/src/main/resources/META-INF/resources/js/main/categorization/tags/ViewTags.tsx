@@ -8,8 +8,8 @@ import {openModal} from 'frontend-js-components-web';
 import {navigate, sub} from 'frontend-js-web';
 import React from 'react';
 
+import MultipleSpacesRenderer from '../../FDSPropsTransformer/cell_renderers/MultipleSpacesRenderer';
 import {executeAsyncItemAction} from '../../FDSPropsTransformer/utils/executeAsyncItemAction';
-import SpaceSticker, {LogoColor} from '../../components/SpaceSticker';
 import CategorizationToolbar from '../CategorizationToolbar';
 import CreateTagsModal from './CreateTagsModal';
 import EditTagsModal from './EditTagsModal';
@@ -62,48 +62,6 @@ export default function ViewTags({
 			type: 'selection',
 		},
 	];
-
-	const ViewsSpaceTableCell = ({itemData}: {itemData: any}) => {
-		const assetLibraryIds = itemData.assetLibraries.map(
-			(assetLibrary: any) => assetLibrary.id
-		);
-
-		if (assetLibraryIds.includes(-1)) {
-			return (
-				<span className="align-items-center d-flex space-renderer-sticker">
-					<SpaceSticker name="All Spaces" size="sm" />
-				</span>
-			);
-		}
-
-		return (
-			<>
-				{itemData.assetLibraries.map(
-					(
-						assetLibrary: {
-							name: string;
-							settings?: {logoColor: string};
-						},
-						index: number
-					) => (
-						<span
-							className="align-items-center d-flex space-renderer-sticker"
-							key={index}
-						>
-							<SpaceSticker
-								displayType={
-									assetLibrary.settings
-										?.logoColor as LogoColor
-								}
-								name={assetLibrary.name}
-								size="sm"
-							/>
-						</span>
-					)
-				)}
-			</>
-		);
-	};
 
 	const views = [
 		{
@@ -265,7 +223,7 @@ export default function ViewTags({
 				customRenderers={{
 					tableCell: [
 						{
-							component: ViewsSpaceTableCell,
+							component: MultipleSpacesRenderer,
 							name: VIEWS_SPACE_TABLE_CELL_RENDERER_NAME,
 							type: 'internal',
 						},
