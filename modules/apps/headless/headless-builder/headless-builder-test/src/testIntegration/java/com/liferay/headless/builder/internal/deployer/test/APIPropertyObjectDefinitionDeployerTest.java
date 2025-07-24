@@ -40,7 +40,7 @@ import org.osgi.framework.FrameworkUtil;
  */
 @FeatureFlag("LPS-178642")
 @RunWith(Arquillian.class)
-public class APIPropertyObjectDefinitionDeployerImplTest {
+public class APIPropertyObjectDefinitionDeployerTest {
 
 	@ClassRule
 	@Rule
@@ -143,7 +143,7 @@ public class APIPropertyObjectDefinitionDeployerImplTest {
 
 	private Bundle _stopHeadlessBuilderImplBundle() throws Exception {
 		Bundle bundle = FrameworkUtil.getBundle(
-			APIPropertyObjectDefinitionDeployerImplTest.class);
+			APIPropertyObjectDefinitionDeployerTest.class);
 
 		BundleContext bundleContext = bundle.getBundleContext();
 
