@@ -77,7 +77,7 @@ public class APIPropertyObjectDefinitionDeployerImplTest {
 		Bundle bundle = null;
 
 		try {
-			bundle = _stopBundle();
+			bundle = _stopHeadlessBuilderImplBundle();
 		}
 		finally {
 			if (bundle != null) {
@@ -141,7 +141,7 @@ public class APIPropertyObjectDefinitionDeployerImplTest {
 		}
 	}
 
-	private Bundle _stopBundle() throws Exception {
+	private Bundle _stopHeadlessBuilderImplBundle() throws Exception {
 		Bundle bundle = FrameworkUtil.getBundle(
 			APIPropertyObjectDefinitionDeployerImplTest.class);
 
