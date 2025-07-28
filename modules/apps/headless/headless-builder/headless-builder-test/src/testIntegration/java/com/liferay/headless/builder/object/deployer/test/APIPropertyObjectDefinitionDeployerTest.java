@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.AssumeTestRule;
+import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.HTTPTestUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.test.rule.FeatureFlag;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 /**
  * @author Magdalena Jedraszak
  */
+@DataGuard(scope = DataGuard.Scope.METHOD)
 @FeatureFlag("LPS-178642")
 @RunWith(Arquillian.class)
 public class APIPropertyObjectDefinitionDeployerTest {
@@ -57,7 +59,7 @@ public class APIPropertyObjectDefinitionDeployerTest {
 	public void testAPIBuilderObjectDefinitionsCreatedAndPublished()
 		throws Exception {
 
-		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+		HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
 				"domain", "able.com"
 			).put(
@@ -68,36 +70,27 @@ public class APIPropertyObjectDefinitionDeployerTest {
 			"headless-portal-instances/v1.0/portal-instances",
 			Http.Method.POST);
 
-		long companyId = jsonObject.getLong("companyId");
-
 		HeadlessBuilderUtil.deploy(
 			_batchEngineUnitProcessor, _batchEngineUnitReader);
 
-		try {
-			HTTPTestUtil.customize(
-			).withBaseURL(
-				"http://www.able.com:8080"
-			).withCredentials(
-				"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
-			).apply(
-				() -> {
-					JSONObject apiPropertyJSONObject =
-						HTTPTestUtil.invokeToJSONObject(
-							null,
-							"object-admin/v1.0/object-definitions" +
-								"/by-external-reference-code/L_API_PROPERTY",
-							Http.Method.GET);
+		HTTPTestUtil.customize(
+		).withBaseURL(
+			"http://www.able.com:8080"
+		).withCredentials(
+			"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
+		).apply(
+			() -> {
+				JSONObject apiPropertyJSONObject =
+					HTTPTestUtil.invokeToJSONObject(
+						null,
+						"object-admin/v1.0/object-definitions" +
+							"/by-external-reference-code/L_API_PROPERTY",
+						Http.Method.GET);
 
-					Assert.assertEquals(
-						"true", apiPropertyJSONObject.getString("active"));
-				}
-			);
-		}
-		finally {
-			if (companyId != 0) {
-				_companyLocalService.deleteCompany(companyId);
+				Assert.assertEquals(
+					"true", apiPropertyJSONObject.getString("active"));
 			}
-		}
+		);
 	}
 
 	@Inject
