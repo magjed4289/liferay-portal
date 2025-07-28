@@ -6,6 +6,9 @@
 package com.liferay.headless.builder.object.deployer.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.batch.engine.unit.BatchEngineUnitProcessor;
+import com.liferay.batch.engine.unit.BatchEngineUnitReader;
+import com.liferay.headless.builder.test.util.HeadlessBuilderUtil;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.db.partition.DBPartition;
@@ -21,19 +24,12 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PropsValues;
 
-import java.util.Objects;
-
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.FrameworkUtil;
 
 /**
  * @author Magdalena Jedraszak
@@ -74,16 +70,8 @@ public class APIPropertyObjectDefinitionDeployerTest {
 
 		long companyId = jsonObject.getLong("companyId");
 
-		Bundle bundle = null;
-
-		try {
-			bundle = _stopHeadlessBuilderImplBundle();
-		}
-		finally {
-			if (bundle != null) {
-				_startHeadlessBuilderImplBundle(bundle);
-			}
-		}
+		HeadlessBuilderUtil.deploy(
+			_batchEngineUnitProcessor, _batchEngineUnitReader);
 
 		try {
 			HTTPTestUtil.customize(
@@ -112,55 +100,11 @@ public class APIPropertyObjectDefinitionDeployerTest {
 		}
 	}
 
-	private void _startHeadlessBuilderImplBundle(Bundle bundle)
-		throws BundleException {
+	@Inject
+	private BatchEngineUnitProcessor _batchEngineUnitProcessor;
 
-		bundle.start();
-
-		long timeout = 5000;
-		long pollInterval = 100;
-		long startTime = System.currentTimeMillis();
-
-		while (bundle.getState() != Bundle.ACTIVE) {
-			if ((System.currentTimeMillis() - startTime) > timeout) {
-				throw new RuntimeException(
-					"Timeout waiting for bundle to become ACTIVE");
-			}
-
-			try {
-				Thread.sleep(pollInterval);
-			}
-			catch (InterruptedException interruptedException) {
-				Thread.currentThread(
-				).interrupt();
-
-				throw new RuntimeException(
-					"Interrupted while waiting for bundle to start",
-					interruptedException);
-			}
-		}
-	}
-
-	private Bundle _stopHeadlessBuilderImplBundle() throws Exception {
-		Bundle bundle = FrameworkUtil.getBundle(
-			APIPropertyObjectDefinitionDeployerTest.class);
-
-		BundleContext bundleContext = bundle.getBundleContext();
-
-		for (Bundle curBundle : bundleContext.getBundles()) {
-			if (Objects.equals(
-					curBundle.getSymbolicName(),
-					"com.liferay.headless.builder.impl") &&
-				(curBundle.getState() == Bundle.ACTIVE)) {
-
-				curBundle.stop();
-
-				return curBundle;
-			}
-		}
-
-		return null;
-	}
+	@Inject
+	private BatchEngineUnitReader _batchEngineUnitReader;
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
