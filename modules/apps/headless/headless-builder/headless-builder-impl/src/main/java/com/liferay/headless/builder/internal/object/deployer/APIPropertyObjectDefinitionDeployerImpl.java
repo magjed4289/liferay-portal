@@ -76,7 +76,7 @@ public class APIPropertyObjectDefinitionDeployerImpl
 				ObjectRelatedModelsProviderRegistryUtil.KEY_RELATIONSHIP_TYPE,
 				"=", ObjectRelationshipConstants.TYPE_ONE_TO_MANY, "))"),
 			new ObjectRelatedModelsProviderServiceTrackerCustomizer(
-				objectDefinition.getCompanyId()));
+				objectDefinition));
 
 		try {
 			_updateExistingAPIProperties(objectDefinition);
@@ -186,9 +186,9 @@ public class APIPropertyObjectDefinitionDeployerImpl
 			<ObjectRelatedModelsProvider, ObjectRelatedModelsProvider> {
 
 		public ObjectRelatedModelsProviderServiceTrackerCustomizer(
-			long companyId) {
+			ObjectDefinition objectDefinition) {
 
-			_companyId = companyId;
+			_objectDefinition = objectDefinition;
 		}
 
 		@Override
@@ -199,7 +199,8 @@ public class APIPropertyObjectDefinitionDeployerImpl
 				objectRelatedModelsProvider = _bundleContext.getService(
 					serviceReference);
 
-			if ((_companyId != objectRelatedModelsProvider.getCompanyId()) ||
+			if ((_objectDefinition.getCompanyId() !=
+					objectRelatedModelsProvider.getCompanyId()) ||
 				(objectRelatedModelsProvider instanceof
 					DeleteOnDisassociateObjectRelatedModelsProvider)) {
 
@@ -256,7 +257,7 @@ public class APIPropertyObjectDefinitionDeployerImpl
 			}
 		}
 
-		private final long _companyId;
+		private final ObjectDefinition _objectDefinition;
 		private final Map
 			<ServiceReference<ObjectRelatedModelsProvider>,
 			 ServiceRegistration<ObjectRelatedModelsProvider<?>>>
