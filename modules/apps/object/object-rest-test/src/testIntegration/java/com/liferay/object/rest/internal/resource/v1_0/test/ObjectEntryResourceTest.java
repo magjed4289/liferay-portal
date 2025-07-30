@@ -167,6 +167,7 @@ import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.filter.InvalidFilterException;
+import com.liferay.portal.search.test.util.IdempotentRetryAssert;
 import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portal.spring.hibernate.PortalTransactionManager;
 import com.liferay.portal.spring.hibernate.PortletTransactionManager;
@@ -216,6 +217,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -7100,42 +7102,65 @@ public class ObjectEntryResourceTest {
 
 	@Test
 	public void testGetObjectEntryWithKeywords() throws Exception {
+		String tag1 = "tag1-" + RandomTestUtil.randomString();
+		String tag2 = "tag2-" + RandomTestUtil.randomString();
+
 		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
 				_OBJECT_FIELD_NAME_1, "value"
 			).put(
-				"keywords", JSONUtil.putAll("tag1", "tag2")
+				"keywords", JSONUtil.putAll(tag1, tag2)
 			).toString(),
 			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
 
-		jsonObject = HTTPTestUtil.invokeToJSONObject(
-			null,
-			_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
-				jsonObject.getString("id"),
-			Http.Method.GET);
+		String objectEntryId1 = jsonObject.getString("id");
 
-		JSONArray keywordsJSONArray = jsonObject.getJSONArray("keywords");
+		IdempotentRetryAssert.retryAssert(
+			5000, TimeUnit.MILLISECONDS,
+			() -> {
+				JSONObject getJSONObject = HTTPTestUtil.invokeToJSONObject(
+					null,
+					_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
+						objectEntryId1,
+					Http.Method.GET);
 
-		Assert.assertEquals("tag1", keywordsJSONArray.get(0));
-		Assert.assertEquals("tag2", keywordsJSONArray.get(1));
+				JSONArray keywordsJSONArray = getJSONObject.getJSONArray(
+					"keywords");
+
+				Assert.assertEquals(tag1, keywordsJSONArray.get(0));
+				Assert.assertEquals(tag2, keywordsJSONArray.get(1));
+
+				return null;
+			});
+
+		String tag3 = "tag3-" + RandomTestUtil.randomString();
 
 		jsonObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
-				"keywords", JSONUtil.putAll("tag1", "tag2", "tag3")
+				"keywords", JSONUtil.putAll(tag1, tag2, tag3)
 			).toString(),
 			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
 
-		jsonObject = HTTPTestUtil.invokeToJSONObject(
-			null,
-			_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
-				jsonObject.getString("id"),
-			Http.Method.GET);
+		String objectEntryId2 = jsonObject.getString("id");
 
-		keywordsJSONArray = jsonObject.getJSONArray("keywords");
+		IdempotentRetryAssert.retryAssert(
+			5000, TimeUnit.MILLISECONDS,
+			() -> {
+				JSONObject getJSONObject = HTTPTestUtil.invokeToJSONObject(
+					null,
+					_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
+						objectEntryId2,
+					Http.Method.GET);
 
-		Assert.assertEquals("tag1", keywordsJSONArray.get(0));
-		Assert.assertEquals("tag2", keywordsJSONArray.get(1));
-		Assert.assertEquals("tag3", keywordsJSONArray.get(2));
+				JSONArray keywordsJSONArray = getJSONObject.getJSONArray(
+					"keywords");
+
+				Assert.assertEquals(tag1, keywordsJSONArray.get(0));
+				Assert.assertEquals(tag2, keywordsJSONArray.get(1));
+				Assert.assertEquals(tag3, keywordsJSONArray.get(2));
+
+				return null;
+			});
 	}
 
 	@Test
