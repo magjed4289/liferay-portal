@@ -1,0 +1,4 @@
+{
+	"className": "com.liferay.object.admin.rest.dto.v1_0.ObjectDefinition",
+	"dataFile": "data.batch-engine-data.json"
+}

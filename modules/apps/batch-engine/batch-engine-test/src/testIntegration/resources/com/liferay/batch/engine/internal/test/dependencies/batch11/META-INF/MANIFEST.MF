@@ -1,0 +1,6 @@
+Manifest-Version: 2
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: batch11
+Bundle-Version: 1.0.0
+Liferay-Client-Extension-Batch: batch11
+Import-Package: com.liferay.batch.engine, com.liferay.batch.engine.service, com.liferay.batch.engine.model
