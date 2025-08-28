@@ -10,6 +10,9 @@ import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.service.ObjectEntryLocalServiceUtil;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
@@ -30,6 +33,11 @@ public class ObjectEntryTestUtil {
 			long groupId, ObjectDefinition objectDefinition,
 			Map<String, Serializable> values, String... keywords)
 		throws Exception {
+
+		PrincipalThreadLocal.setName(TestPropsValues.getUserId());
+
+		PermissionThreadLocal.setPermissionChecker(
+			PermissionCheckerFactoryUtil.create(TestPropsValues.getUser()));
 
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext();
