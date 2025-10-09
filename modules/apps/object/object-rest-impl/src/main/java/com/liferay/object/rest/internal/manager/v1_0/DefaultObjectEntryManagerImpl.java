@@ -99,6 +99,7 @@ import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.search.filter.TermFilter;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -706,10 +707,10 @@ public class DefaultObjectEntryManagerImpl
 			).put(
 				"deleteBatch",
 				ActionUtil.addAction(
-					ActionKeys.DELETE, ObjectEntryResourceImpl.class, null,
+					ActionKeys.DELETE, ObjectEntryResourceImpl.class,
+					objectDefinition.getObjectDefinitionId(),
 					"deleteObjectEntryBatch", null,
-					objectDefinition.getUserId(),
-					objectDefinition.getResourceName(), groupId,
+					_objectDefinitionModelResourcePermission,
 					dtoConverterContext.getUriInfo())
 			).put(
 				"get",
@@ -721,9 +722,10 @@ public class DefaultObjectEntryManagerImpl
 			).put(
 				"updateBatch",
 				ActionUtil.addAction(
-					ActionKeys.UPDATE, ObjectEntryResourceImpl.class, null,
-					"putObjectEntryBatch", null, objectDefinition.getUserId(),
-					objectDefinition.getResourceName(), groupId,
+					ActionKeys.UPDATE, ObjectEntryResourceImpl.class,
+					objectDefinition.getObjectDefinitionId(),
+					"putObjectEntryBatch", null,
+					_objectDefinitionModelResourcePermission,
 					dtoConverterContext.getUriInfo())
 			).build(),
 			_getFacets(
@@ -3591,6 +3593,12 @@ public class DefaultObjectEntryManagerImpl
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.object.model.ObjectDefinition)"
+	)
+	private ModelResourcePermission<ObjectDefinition>
+		_objectDefinitionModelResourcePermission;
 
 	@Reference(
 		target = "(component.name=com.liferay.object.rest.internal.dto.v1_0.converter.ObjectEntryDTOConverter)"
