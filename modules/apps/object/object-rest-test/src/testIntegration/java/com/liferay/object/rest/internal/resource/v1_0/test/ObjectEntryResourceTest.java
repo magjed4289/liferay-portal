@@ -5808,11 +5808,23 @@ public class ObjectEntryResourceTest {
 		Assert.assertFalse(actionsJSONObject1.isNull("create"));
 		Assert.assertFalse(actionsJSONObject1.isNull("createBatch"));
 		Assert.assertFalse(actionsJSONObject1.isNull("deleteBatch"));
-		Assert.assertTrue(actionsJSONObject1.isNull("get"));
 		Assert.assertFalse(actionsJSONObject1.isNull("updateBatch"));
 
+		Assert.assertTrue(actionsJSONObject1.isNull("get"));
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		_addResourcePermission(
+			ObjectActionKeys.ADD_OBJECT_ENTRY,
+			_objectDefinition4.getResourceName(), role);
+
+		User user = _addUser("test1", "test1");
+
+		_roleLocalService.addUserRole(user.getUserId(), role.getRoleId());
+
 		HTTPTestUtil.customize(
-		).withGuest(
+		).withCredentials(
+			"test1@liferay.com", "test1"
 		).apply(
 			() -> {
 				JSONObject jsonObject2 = HTTPTestUtil.invokeToJSONObject(
@@ -5822,11 +5834,31 @@ public class ObjectEntryResourceTest {
 				JSONObject actionsJSONObject2 = jsonObject2.getJSONObject(
 					"actions");
 
-				Assert.assertTrue(actionsJSONObject2.isNull("create"));
-				Assert.assertTrue(actionsJSONObject2.isNull("createBatch"));
+				Assert.assertFalse(actionsJSONObject2.isNull("create"));
+				Assert.assertFalse(actionsJSONObject2.isNull("createBatch"));
+
 				Assert.assertTrue(actionsJSONObject2.isNull("deleteBatch"));
-				Assert.assertTrue(actionsJSONObject2.isNull("get"));
 				Assert.assertTrue(actionsJSONObject2.isNull("updateBatch"));
+				Assert.assertTrue(actionsJSONObject2.isNull("get"));
+			}
+		);
+
+		HTTPTestUtil.customize(
+		).withGuest(
+		).apply(
+			() -> {
+				JSONObject jsonObject3 = HTTPTestUtil.invokeToJSONObject(
+					null, _objectDefinition4.getRESTContextPath(),
+					Http.Method.GET);
+
+				JSONObject actionsJSONObject3 = jsonObject3.getJSONObject(
+					"actions");
+
+				Assert.assertTrue(actionsJSONObject3.isNull("create"));
+				Assert.assertTrue(actionsJSONObject3.isNull("createBatch"));
+				Assert.assertTrue(actionsJSONObject3.isNull("deleteBatch"));
+				Assert.assertTrue(actionsJSONObject3.isNull("get"));
+				Assert.assertTrue(actionsJSONObject3.isNull("updateBatch"));
 			}
 		);
 	}
