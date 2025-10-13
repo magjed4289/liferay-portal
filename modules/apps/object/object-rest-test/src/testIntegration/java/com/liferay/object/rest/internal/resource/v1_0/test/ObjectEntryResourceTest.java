@@ -5818,6 +5818,12 @@ public class ObjectEntryResourceTest {
 			ObjectActionKeys.ADD_OBJECT_ENTRY,
 			_objectDefinition4.getResourceName(), role);
 
+		_addResourcePermission(
+			ActionKeys.UPDATE, ObjectDefinition.class.getName(), role);
+
+		_addResourcePermission(
+			ActionKeys.DELETE, ObjectDefinition.class.getName(), role);
+
 		User user = _addUser("test1", "test1");
 
 		_roleLocalService.addUserRole(user.getUserId(), role.getRoleId());
@@ -5836,9 +5842,9 @@ public class ObjectEntryResourceTest {
 
 				Assert.assertFalse(actionsJSONObject2.isNull("create"));
 				Assert.assertFalse(actionsJSONObject2.isNull("createBatch"));
+				Assert.assertFalse(actionsJSONObject2.isNull("deleteBatch"));
+				Assert.assertFalse(actionsJSONObject2.isNull("updateBatch"));
 
-				Assert.assertTrue(actionsJSONObject2.isNull("deleteBatch"));
-				Assert.assertTrue(actionsJSONObject2.isNull("updateBatch"));
 				Assert.assertTrue(actionsJSONObject2.isNull("get"));
 			}
 		);
