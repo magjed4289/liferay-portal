@@ -2,7 +2,7 @@
 	"#child-nodes": [
 		{
 			"#tag-name": "name",
-			"#value": "Make Longer"
+			"#value": "[$WORKFLOW_DEFINITION_NAME$]"
 		},
 		{
 			"#tag-name": "version",
@@ -47,7 +47,7 @@
 									"#child-nodes": [
 										{
 											"#tag-name": "label",
-											"#value": "Make Longer",
+											"#value": "[$WORKFLOW_DEFINITION_NAME$]",
 											"language-id": "en_US"
 										}
 									],
@@ -55,11 +55,11 @@
 								},
 								{
 									"#tag-name": "name",
-									"#value": "makeLonger"
+									"#value": "[$WORKFLOW_TASK_NAME$]"
 								},
 								{
 									"#tag-name": "target",
-									"#value": "makeLonger"
+									"#value": "[$WORKFLOW_TASK_NAME$]"
 								},
 								{
 									"#tag-name": "default",
@@ -79,10 +79,6 @@
 				{
 					"#tag-name": "name",
 					"#value": "end"
-				},
-				{
-					"#tag-name": "description",
-					"#value": "Conclude the workflow."
 				},
 				{
 					"#cdata-value": [
@@ -113,7 +109,7 @@
 			"#child-nodes": [
 				{
 					"#tag-name": "name",
-					"#value": "makeLonger"
+					"#value": "[$WORKFLOW_TASK_NAME$]"
 				},
 				{
 					"#cdata-value": [
@@ -138,7 +134,7 @@
 					"#child-nodes": [
 						{
 							"#tag-name": "label",
-							"#value": "Make Longer Task",
+							"#value": "[$WORKFLOW_DEFINITION_NAME$]",
 							"language-id": "en_US"
 						}
 					],

@@ -6,6 +6,7 @@
 package com.liferay.ai.hub.site.initializer.internal.workflow.kaleo.runtime.node;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.workflow.kaleo.runtime.node.TaskNodeExecutorAIDelegate;
 
 import java.io.Serializable;
@@ -18,10 +19,10 @@ import org.osgi.service.component.annotations.Component;
  * @author João Victor Alves
  */
 @Component(service = TaskNodeExecutorAIDelegate.class)
-public class FixSpellingAndGrammarTaskNodeExecutorAIDelegate
+public class MakeShorterTaskNodeExecutorAIDelegate
 	extends BaseTaskNodeExecutorAIDelegate {
 
-	public static final String KEY = "fix-spelling-and-grammar";
+	public static final String KEY = "make-shorter";
 
 	@Override
 	public String getKey() {
@@ -33,18 +34,20 @@ public class FixSpellingAndGrammarTaskNodeExecutorAIDelegate
 		Map<String, Serializable> workflowContext) {
 
 		return StringBundler.concat(
-			"You are an expert linguistic editor. Your sole task is to ",
-			"correct all grammatical, spelling, and punctuation errors in the ",
-			"provided text while preserving its meaning, tone, and style. Do ",
-			"not alter structure or wording beyond what is necessary for ",
-			"grammatical precision and natural fluency. Output only the ",
-			"corrected text, with no explanations or commentary. If the text ",
-			"is already correct, return it unchanged.");
+			"You are an expert linguistic editor. Your sole task is to reduce ",
+			"the length of the provided text while preserving all essential ",
+			"information, key points, and original intent. Remove redundancy, ",
+			"filler, and unnecessary detail without changing meaning, tone, ",
+			"or clarity. If the text is already concise and cannot be ",
+			"shortened without losing important content, return it unchanged. ",
+			"Output only the shortened text, with no explanations or ",
+			"commentary.");
 	}
 
 	@Override
 	protected String getUserMessage(Map<String, Serializable> workflowContext) {
-		return "This is the text to be fixed: " + workflowContext.get("text");
+		return "This is the text to be shortened: " +
+			GetterUtil.getString(workflowContext.get("text"));
 	}
 
 }
