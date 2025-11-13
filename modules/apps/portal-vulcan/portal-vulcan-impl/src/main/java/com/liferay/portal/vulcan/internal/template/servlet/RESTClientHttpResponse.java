@@ -21,6 +21,15 @@ public class RESTClientHttpResponse extends DummyHttpServletResponse {
 	}
 
 	@Override
+	public void sendError(int statusCode) {
+		setStatus(statusCode);
+	}
+
+	@Override
+	public void sendError(int statusCode, String msg) {
+		setStatus(statusCode);
+	}
+	@Override
 	public void setContentType(String contentType) {
 		_contentType = contentType;
 	}
