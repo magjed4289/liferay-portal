@@ -29,12 +29,15 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.performance.PerformanceTimer;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.AssumeTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.transaction.Propagation;
@@ -57,13 +60,16 @@ import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 
 import java.io.Closeable;
 
+import java.io.Serializable;
 import java.net.ConnectException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
 
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -150,6 +156,91 @@ public class ObjectEntryPerformanceTest {
 				0, _customObjectDefinition.getObjectDefinitionId(),
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 		}
+	}
+
+	@Test
+	public void testSynchronousObjectEntryInsertion() throws Exception {
+
+		_customObjectDefinition =
+			ObjectDefinitionTestUtil.addCustomObjectDefinition(
+				false,
+				Collections.singletonList(
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_STRING, "Performance",
+						"performance")));
+
+		_customObjectDefinition =
+			_objectDefinitionLocalService.publishCustomObjectDefinition(
+				TestPropsValues.getUserId(),
+				_customObjectDefinition.getObjectDefinitionId());
+
+		TransactionConfig.Builder transactionConfigBuilder =
+			new TransactionConfig.Builder();
+
+		try {
+			_company = TransactionInvokerUtil.invoke(
+				transactionConfigBuilder.setPropagation(
+					Propagation.REQUIRED
+				).setRollbackForClasses(
+					Exception.class
+				).build(),
+				() -> {
+					Company company = CompanyLocalServiceUtil.addCompany(
+						null, _VIRTUAL_HOST_NAME, _VIRTUAL_HOST_NAME,
+						_VIRTUAL_HOST_NAME, 0, true, true, null, null, null, null,
+						null, null);
+
+					PortalInstances.initCompany(company);
+
+					return company;
+				}
+			);
+		}
+		catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+
+		User adminUser = UserTestUtil.getAdminUser(_company.getCompanyId());
+
+		long objectDefinitionId = _customObjectDefinition.getObjectDefinitionId();
+
+		Assert.assertNotNull(adminUser);
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(
+				_company.getGroupId(), adminUser.getUserId());
+
+		int numberOfEntries = 30000;
+
+		long start = System.currentTimeMillis();
+
+		for (int i = 0; i < numberOfEntries; i++) {
+			Map<String, Serializable> values = HashMapBuilder.<String, Serializable>put(
+				"alpha", "foo"
+			).build();
+
+			_objectEntryLocalService.addOrUpdateObjectEntry(
+				RandomTestUtil.randomString(),
+				0,
+				adminUser.getUserId(),
+				objectDefinitionId,
+				0,
+				values,
+				serviceContext
+			);
+		}
+
+		long elapsed = System.currentTimeMillis() - start;
+
+		System.out.println(
+			"Inserted " + numberOfEntries +
+			" synchronous object entries in " + elapsed + " ms"
+		);
+
+		Assert.assertEquals(
+			numberOfEntries,
+			_objectEntryLocalService.getObjectEntriesCount(objectDefinitionId)
+		);
 	}
 
 	@Test
@@ -305,7 +396,7 @@ public class ObjectEntryPerformanceTest {
 		}
 	}
 
-	private static final String _VIRTUAL_HOST_NAME = "www.able.com";
+	private static final String _VIRTUAL_HOST_NAME = "test-virtual-host-1.com";
 
 	private static int _objectEntriesCount;
 	private static Properties _properties;
