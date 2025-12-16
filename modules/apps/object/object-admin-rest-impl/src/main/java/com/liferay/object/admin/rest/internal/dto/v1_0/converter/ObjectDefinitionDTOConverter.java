@@ -56,6 +56,8 @@ public class ObjectDefinitionDTOConverter
 				serviceBuilderObjectDefinition)
 		throws Exception {
 
+		System.out.println("TEST");
+
 		if (serviceBuilderObjectDefinition == null) {
 			return null;
 		}
