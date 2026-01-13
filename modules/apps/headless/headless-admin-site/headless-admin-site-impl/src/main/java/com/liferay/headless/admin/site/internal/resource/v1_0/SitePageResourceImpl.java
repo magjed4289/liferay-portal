@@ -183,7 +183,8 @@ public class SitePageResourceImpl
 
 						return StringBundler.concat(
 							"externalReferenceCode in (",
-							StringUtil.merge(
+							String.join(
+								", ",
 								transform(
 									externalReferenceCodes,
 									layoutExternalReferenceCode ->
