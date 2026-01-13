@@ -231,11 +231,6 @@ public class SitePageResourceImpl
 			}
 
 			@Override
-			public boolean isHidden() {
-				return true;
-			}
-
-			@Override
 			public boolean isStagingSupported() {
 				return true;
 			}
