@@ -61,10 +61,6 @@ public interface ExportImportVulcanBatchEngineTaskItemDelegate<T>
 			return true;
 		}
 
-		public default boolean isHidden() {
-			return false;
-		}
-
 		public default boolean isStagingSupported() {
 			return false;
 		}
