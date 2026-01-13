@@ -165,20 +165,6 @@ public class BatchEnginePortletDataHandler extends BasePortletDataHandler {
 	}
 
 	@Override
-	public boolean isHidden() {
-		if (_registrations.size() != 1) {
-			return false;
-		}
-
-		Registration registration = _registrations.get(0);
-
-		ExportImportVulcanBatchEngineTaskItemDelegate.ExportImportDescriptor
-			exportImportDescriptor = registration.getExportImportDescriptor();
-
-		return exportImportDescriptor.isHidden();
-	}
-
-	@Override
 	public boolean isStaged() {
 		return !StringUtil.startsWith(
 			getPortletId(), ObjectPortletKeys.OBJECT_DEFINITIONS);
