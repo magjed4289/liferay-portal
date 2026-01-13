@@ -181,16 +181,15 @@ public class SitePageResourceImpl
 							}
 						}
 
-						return StringBundler.concat(
-							"externalReferenceCode in (",
-							String.join(
-								", ",
-								transform(
-									externalReferenceCodes,
-									layoutExternalReferenceCode ->
-										"'" + layoutExternalReferenceCode +
-											"'")),
-							")");
+						String quotedExternalReferenceCodes = String.join(
+							", ",
+							transform(
+								externalReferenceCodes,
+								layoutExternalReferenceCode ->
+									"'" + layoutExternalReferenceCode + "'"));
+
+						return "externalReferenceCode in (" +
+							quotedExternalReferenceCodes + ")";
 					}
 				).build();
 			}
