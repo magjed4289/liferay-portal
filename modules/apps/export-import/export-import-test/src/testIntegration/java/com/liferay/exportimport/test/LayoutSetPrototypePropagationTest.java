@@ -72,6 +72,7 @@ import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.FeatureFlagTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
@@ -167,6 +168,8 @@ public class LayoutSetPrototypePropagationTest
 
 	@Test
 	public void testLayoutDeleteAndReadWithSameFriendlyURL() throws Exception {
+		FeatureFlagTestUtil.invokeFeatureFlagListeners(
+			TestPropsValues.getCompanyId(), true, "LPD-35914");
 		setLinkEnabled(true);
 
 		Layout layout = LayoutTestUtil.addTypePortletLayout(
@@ -209,6 +212,9 @@ public class LayoutSetPrototypePropagationTest
 		Assert.assertEquals(
 			"Friendly URLs of the source and target layouts should match",
 			friendlyURL, propagatedLayout.getFriendlyURL());
+
+		FeatureFlagTestUtil.invokeFeatureFlagListeners(
+			TestPropsValues.getCompanyId(), false, "LPD-35914");
 	}
 
 	@Test
