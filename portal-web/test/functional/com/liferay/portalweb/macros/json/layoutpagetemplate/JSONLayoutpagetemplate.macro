@@ -14,8 +14,11 @@ definition {
 
 		var classNameId = JSONLayoutpagetemplateSetter.setClassNameId(contentType = ${contentType});
 
-		if ((${subType} == "Basic Document") || (${contentType} == "Blogs Entry") || (${contentType} == "Category") || (${contentType} == "Order") || (${contentType} == "Product") || (${contentType} == "Knowledge Base Article")) {
-			var classTypeId = 0;
+		if ((${contentType} == "Blogs Entry") || (${contentType} == "Category") || (${contentType} == "Order") || (${contentType} == "Product") || (${contentType} == "Knowledge Base Article")) {
+			var classTypeKey = "null";
+		}
+		else if (${subType} == "Basic Document") {
+			var classTypeKey = "BASIC-DOCUMENT";
 		}
 		else {
 			if (${subType} == "Basic Web Content") {
@@ -23,19 +26,14 @@ definition {
 					groupName = "Global",
 					site = "true");
 
-				var classTypeId = JSONLayoutpagetemplateSetter.setClassTypeId(
-					classNameId = ${classNameId},
-					groupId = ${globalGroupId},
-					structureName = ${subType});
+				var classTypeKey = "BASIC-WEB-CONTENT";
 			}
 			else if (${subType} == "Google Drive Shortcut") {
 				var globalGroupId = JSONGroupAPI._getGroupIdByName(
 					groupName = "Global",
 					site = "true");
 
-				var classTypeId = JSONDLfileentrytype._getFileEntryTypeId(
-					fileEntryTypeName = ${subType},
-					groupId = ${globalGroupId});
+				var classTypeKey = "null";
 			}
 			else {
 				if (isSet(depotName)) {
@@ -44,15 +42,10 @@ definition {
 						site = "false");
 
 					if (isSet(depotStructure)) {
-						var classTypeId = JSONLayoutpagetemplateSetter.setClassTypeId(
-							classNameId = ${classNameId},
-							groupId = ${depotId},
-							structureName = ${subType});
+						var classTypeKey = "null";
 					}
 					else if (isSet(depotDocumentType)) {
-						var classTypeId = JSONDLfileentrytype._getFileEntryTypeId(
-							fileEntryTypeName = ${subType},
-							groupId = ${depotId});
+						var classTypeKey = "null";
 					}
 				}
 				else if (isSet(globalStructure)) {
@@ -60,25 +53,17 @@ definition {
 						groupName = "Global",
 						site = "true");
 
-					var classTypeId = JSONLayoutpagetemplateSetter.setClassTypeId(
-						classNameId = ${classNameId},
-						groupId = ${globalGroupId},
-						structureName = ${subType});
+					var classTypeKey = "null";
 				}
 				else if (isSet(globalDocumentType)) {
 					var globalGroupId = JSONGroupAPI._getGroupIdByName(
 						groupName = "Global",
 						site = "true");
 
-					var classTypeId = JSONDLfileentrytype._getFileEntryTypeId(
-						fileEntryTypeName = ${subType},
-						groupId = ${globalGroupId});
+					var classTypeKey = "null";
 				}
 				else {
-					var classTypeId = JSONLayoutpagetemplateSetter.setClassTypeId(
-						classNameId = ${classNameId},
-						groupId = ${groupId},
-						structureName = ${subType});
+					var classTypeKey = "null";
 				}
 			}
 		}
@@ -106,7 +91,7 @@ definition {
 
 		JSONLayoutpagetemplateAPI._addDisplayPageTemplateEntry(
 			classNameId = ${classNameId},
-			classTypeId = ${classTypeId},
+			classTypeKey = ${classTypeKey},
 			displayPageTemplateEntryName = ${displayPageTemplateEntryName},
 			groupId = ${groupId},
 			masterLayoutPlid = ${masterLayoutPlid},
