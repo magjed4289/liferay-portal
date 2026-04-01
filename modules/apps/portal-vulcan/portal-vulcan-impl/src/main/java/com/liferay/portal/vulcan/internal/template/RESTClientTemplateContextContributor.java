@@ -18,17 +18,19 @@ import com.liferay.portal.kernel.servlet.PipingServletResponse;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.template.TemplateContextContributor;
 import com.liferay.portal.kernel.util.ContentTypes;
+import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.vulcan.internal.template.servlet.RESTClientHttpRequestDelegate;
 import com.liferay.portal.vulcan.internal.template.servlet.RESTClientHttpResponse;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.service.component.annotations.Component;
@@ -94,14 +96,45 @@ public class RESTClientTemplateContextContributor
 			try {
 				AccessControlUtil.setAccessControlContext(null);
 
-				requestDispatcher.forward(
-					ProxyUtil.newDelegateProxyInstance(
-						HttpServletRequest.class.getClassLoader(),
-						HttpServletRequest.class,
-						new RESTClientHttpRequestDelegate(
-							_contextObjects, _httpServletRequest, path),
-						_httpServletRequest),
-					httpServletResponse);
+				HttpServletRequest wrappedRequest = new HttpServletRequestWrapper(_httpServletRequest) {
+
+					private final String _queryString;
+					private final Map<String, String[]> _parameterMap;
+
+					{
+						int questionMarkIndex = path.indexOf('?');
+						if (questionMarkIndex > -1) {
+							_queryString = path.substring(questionMarkIndex + 1);
+							_parameterMap = HttpComponentsUtil.getParameterMap(_queryString);
+						} else {
+							_queryString = null;
+							_parameterMap = Collections.emptyMap();
+						}
+					}
+
+					@Override
+					public String getParameter(String name) {
+						String[] values = _parameterMap.get(name);
+						return (values != null && values.length > 0) ? values[0] : null;
+					}
+
+					@Override
+					public Map<String, String[]> getParameterMap() {
+						return _parameterMap;
+					}
+
+					@Override
+					public String getQueryString() {
+						return _queryString;
+					}
+
+					@Override
+					public ServletRequest getRequest() {
+						return _httpServletRequest;
+					}
+				};
+
+				requestDispatcher.forward(wrappedRequest, httpServletResponse);
 			}
 			finally {
 				AccessControlUtil.setAccessControlContext(accessControlContext);
