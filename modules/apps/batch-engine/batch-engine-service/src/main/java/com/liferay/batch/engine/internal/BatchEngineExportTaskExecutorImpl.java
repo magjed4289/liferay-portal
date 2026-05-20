@@ -20,6 +20,7 @@ import com.liferay.batch.engine.model.BatchEngineExportTask;
 import com.liferay.batch.engine.pagination.Page;
 import com.liferay.batch.engine.pagination.Pagination;
 import com.liferay.batch.engine.service.BatchEngineExportTaskLocalService;
+import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
 import com.liferay.petra.io.unsync.UnsyncByteArrayInputStream;
@@ -138,7 +139,21 @@ public class BatchEngineExportTaskExecutorImpl
 			}
 
 			InputStream inputStream = BatchEngineTaskExecutorUtil.execute(
-				true, () -> _exportItems(batchEngineExportTask, settings),
+				true,
+				() -> {
+					boolean oldLayoutExport =
+						ExportImportThreadLocal.isLayoutExportInProcess();
+
+					ExportImportThreadLocal.setLayoutExportInProcess(true);
+
+					try {
+						return _exportItems(batchEngineExportTask, settings);
+					}
+					finally {
+						ExportImportThreadLocal.setLayoutExportInProcess(
+							oldLayoutExport);
+					}
+				},
 				_userLocalService.getUser(batchEngineExportTask.getUserId()));
 
 			_updateBatchEngineExportTask(
