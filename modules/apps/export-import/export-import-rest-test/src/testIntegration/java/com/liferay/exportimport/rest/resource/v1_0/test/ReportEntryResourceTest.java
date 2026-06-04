@@ -79,7 +79,13 @@ public class ReportEntryResourceTest extends BaseReportEntryResourceTestCase {
 		super.testGetImportProcessReportEntriesPage();
 
 		_testGetImportProcessReportEntriesPageWithEmptyExportImportReportEntry();
-		_testGetImportProcessReportEntriesPageWithFilter();
+		_testGetImportProcessReportEntriesPageWithFilter(
+			_addReportEntry(
+				_randomReportEntry(
+					ExportImportReportEntryConstants.TYPE_ERROR)),
+			_addReportEntry(
+				_randomReportEntry(
+					ExportImportReportEntryConstants.TYPE_EMPTY)));
 		_testGetImportProcessReportEntriesPageWithLocalizedSearchTerm();
 		_testGetImportProcessReportEntriesPageWithSort();
 	}
@@ -217,11 +223,11 @@ public class ReportEntryResourceTest extends BaseReportEntryResourceTestCase {
 		Assert.assertEquals(totalCount + 1, page.getTotalCount());
 	}
 
-	private void _testGetImportProcessReportEntriesPageWithFilter()
+	private void _testGetImportProcessReportEntriesPageWithFilter(
+			ReportEntry reportEntry1, ReportEntry reportEntry2)
 		throws Exception {
 
-		ReportEntry reportEntry1 = _addReportEntry(
-			_randomReportEntry(ExportImportReportEntryConstants.TYPE_ERROR));
+		// contains
 
 		_assertReportEntries(
 			"contains(classExternalReferenceCode, '" +
@@ -231,15 +237,8 @@ public class ReportEntryResourceTest extends BaseReportEntryResourceTestCase {
 			"contains(classExternalReferenceCode, '" +
 				RandomTestUtil.randomString() + "')",
 			null);
-		_assertReportEntries(
-			"startswith(modelName, '" + reportEntry1.getModelName() + "')",
-			null, reportEntry1.getId());
-		_assertReportEntries(
-			"startswith(modelName, '" + RandomTestUtil.randomString() + "')",
-			null);
 
-		ReportEntry reportEntry2 = _addReportEntry(
-			_randomReportEntry(ExportImportReportEntryConstants.TYPE_EMPTY));
+		// eq
 
 		_assertReportEntries(
 			StringBundler.concat(
@@ -268,6 +267,15 @@ public class ReportEntryResourceTest extends BaseReportEntryResourceTestCase {
 					ExportImportReportEntryConstants.getTypeLabel(
 						ExportImportReportEntryConstants.TYPE_ERROR)),
 				"'"),
+			null);
+
+		// startswith
+
+		_assertReportEntries(
+			"startswith(modelName, '" + reportEntry1.getModelName() + "')",
+			null, reportEntry1.getId());
+		_assertReportEntries(
+			"startswith(modelName, '" + RandomTestUtil.randomString() + "')",
 			null);
 	}
 
