@@ -227,12 +227,10 @@ public class ReportEntryResourceTest extends BaseReportEntryResourceTestCase {
 			"contains(classExternalReferenceCode, '" +
 				reportEntry1.getClassExternalReferenceCode() + "')",
 			null, reportEntry1.getId());
-
 		_assertReportEntries(
 			"contains(classExternalReferenceCode, '" +
 				RandomTestUtil.randomString() + "')",
 			null);
-
 		_assertReportEntries(
 			"startswith(modelName, '" + reportEntry1.getModelName() + "')",
 			null, reportEntry1.getId());
@@ -253,7 +251,6 @@ public class ReportEntryResourceTest extends BaseReportEntryResourceTestCase {
 				"id eq ", reportEntry2.getId(), " and type/code eq ",
 				ExportImportReportEntryConstants.TYPE_ERROR),
 			null);
-
 		_assertReportEntries(
 			StringBundler.concat(
 				"id eq ", reportEntry2.getId(), " and type/label eq '",
