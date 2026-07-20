@@ -78,15 +78,19 @@ For `<newTaskId>` and `<previousTaskId>`, follow [`references/testray-testflow.m
 
 Follow the **Diff Two Analysis Tasks** procedure in the reference doc: diff by real case ID directly (pooling every subtask's members first — never by subtask signature presence, which hides any fix or regression that happens inside a cluster still kept alive by other members), then cross-check every case in the resulting new/fixed sets individually against the *other* build's own result for that case ID. Separate the generic environment/boot-failure cases from genuine code regressions — they get reported, but never attributed to a commit.
 
-### Attribute Regressions to Commits
+### Attribute Changes to Commits
 
-For each genuine new regression (or group of regressions sharing one error signature):
+Run this for every case in both `new` and `fixed` — not just regressions. A fixed test earns just as concrete an answer as a new one; skipping attribution on the fixed side is how "60 tests fixed" ends up reported with no explanation of why.
 
-1. Locate the owning module or test file from the case name (e.g. a Poshi `.testcase`, a `*ResourceTest.java`, a Playwright `.spec.ts`).
+For each case (or group of cases sharing one error signature — a single fix or regression commonly resolves or breaks several tests in the same feature area at once, so group before attributing rather than repeating the search per test):
 
-1. In the `liferay-portal` clone, run `git log <olderBuildSha>..<newerBuildSha> -- <path>` scoped to that module, then widen the search (feature area, DTO class name, error keyword via `git log -S"<term>"`) until a commit or tight commit cluster explains the change. Read each candidate's full message and diff before deciding.
+1. **Check Testray's own case history first**, per [`references/testray-testflow.md`](references/testray-testflow.md#check-case-history-for-a-linked-jira-issue-before-attributing-by-commit) — an `issues` entry landing inside the compared date range is a direct answer and skips the rest of this section entirely. A long tail of older, unrelated tickets is still worth noting in the report as evidence of chronic flakiness, even when it doesn't name the fix.
 
-1. Resolve every candidate commit's author email and check it against the roster fetched in **References**:
+1. Otherwise, locate the owning module or test file from the case name (e.g. a Poshi `.testcase`, a `*ResourceTest.java`, a Playwright `.spec.ts`).
+
+1. In the `liferay-portal` clone, run `git log <olderBuildSha>..<newerBuildSha> -- <path>` scoped to that module, then widen the search (feature area, DTO class name, error keyword via `git log -S"<term>"`) until a commit or tight commit cluster explains the change. Read each candidate's full message and diff before deciding. Label the attribution **plausible** rather than confirmed when the link is topical/file-level rather than a direct match to the assertion that changed.
+
+1. For a **new regression**, resolve the commit's author email and check it against the roster fetched in **References**:
 	- **On the roster** → this is the team's own work. The regression is squarely the team's to fix.
 	- **Not on the roster** → search the `liferay-headless/liferay-portal` GitHub repository for an existing "Intruders 🦹‍♂️" issue mentioning the commit's short SHA:
 
@@ -96,7 +100,7 @@ For each genuine new regression (or group of regressions sharing one error signa
 
 		When found, read the issue (and, if closed, its triage comment) to report whether it was already escalated or dismissed, and link it. When no issue mentions it yet, say so plainly — it means the automated Intruders triage has not caught this one, and the team may want to flag it.
 
-When no commit is found after widening the search, report the regression as unattributed rather than guessing.
+When no commit or linked issue is found after widening the search, report the case as unattributed rather than guessing.
 
 ### Build the Report
 
@@ -119,7 +123,7 @@ Both the Confluence page body and the chat reply share this structure:
 
 1. **Issues to be claimed**, the unattributed or team-caused regressions, so the team has a concrete pickup list.
 
-1. **Fixed**, one row per confirmed-fixed test with a link to its case result on the *older* build (where it last failed) and that failure's error text.
+1. **Fixed**, foldable given the count is often large, one row per confirmed-fixed test: a link to its case result on the *older* build (where it last failed), that failure's error text, and an **LPD Ticket** column from the attribution step — the specific ticket, "plausible: LPD-NNNNN" when the link is topical rather than confirmed, or "Unattributed" when nothing turned up. Group the summary above the table by ticket (or "unattributed") so one fix that resolved many tests reads as one entry, not a wall of identical rows.
 
 1. **Still failing, error changed** — tests that matched a "new" signature on one side and a "fixed" signature on the other purely because the error text shifted, but the individual cross-check in **Diff** showed they were failing on both builds all along. Report these separately with both errors shown side by side; never let one leak into the New Regressions or Fixed sections.
 

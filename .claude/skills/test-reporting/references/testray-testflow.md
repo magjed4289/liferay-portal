@@ -112,6 +112,28 @@ Some resolved names are not real tests — filter them out before reporting:
 
 1. Treat any case whose error text is a generic environment/boot failure (`The build failed prior to running the test.`, an `org.apache.tools.ant.TaskAdapter` stack frame, `stop-docker-containers:`, `Failed for unknown reason`, a bare `[echo]`) as part of one infrastructure incident, not an independent code regression — there is no commit to blame for a build that never ran the test. Apply this check per case, not per subtask: a subtask can carry a generic-sounding signature while still grouping real, individually-meaningful failures.
 
+## Check Case History for a Linked Jira Issue Before Attributing by Commit
+
+Before falling back to `git log` archaeology for any case in `new` or `fixed`, check whether Testray already has a Jira ticket linked to that case — this is a direct answer, not an inference. Pull the case's full history (not filtered to FAILED/BLOCKED, and not routine-filtered, since the interesting entry is usually the request itself) and read the `issues` field:
+
+```bash
+curl \
+	--data-urlencode "pageSize=300" \
+	--data-urlencode "sort=executionDate:desc" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--silent \
+	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-case-result-history/<caseId>"
+```
+
+`issues` is populated only on entries a tester manually marked `BLOCKED` while citing a known ticket — it is empty on ordinary `FAILED`/`PASSED` entries, including the two builds actually being diffed almost always. Two different readings follow from what turns up:
+
+- An `issues` entry that falls **inside or adjacent to the date range between the two compared builds** is a direct, high-confidence answer — use that ticket instead of searching commits.
+- Entries that only exist **well before** the range (weeks or months earlier) are not the fix for the current occurrence — they are prior triage. But a long tail of many *different* ticket numbers across many months for the same case is itself a signal: it says the case has been chronically flaky and repeatedly re-triaged under a rotating cast of tickets, which is good evidence for reporting it as flaky rather than a fresh regression, even though it does not name what fixed *this* occurrence.
+
+Either way, check this before spending a git-log budget on a case — it is one HTTP call and sometimes obviates the search entirely.
+
 ## URL Patterns
 
 Deep-linkable Testray UI routes, useful for citing evidence in a report:
