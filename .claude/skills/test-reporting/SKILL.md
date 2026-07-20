@@ -76,7 +76,7 @@ For `<newTaskId>` and `<previousTaskId>`, follow [`references/testray-testflow.m
 
 ### Diff
 
-Follow the **Diff Two Analysis Tasks** procedure in the reference doc: match subtasks by normalized error signature, then cross-check every candidate new-failure and candidate-fixed test individually against the *other* build's own result for that case ID. Separate the generic environment/boot-failure cluster(s) from genuine code regressions — they get reported, but never attributed to a commit.
+Follow the **Diff Two Analysis Tasks** procedure in the reference doc: diff by real case ID directly (pooling every subtask's members first — never by subtask signature presence, which hides any fix or regression that happens inside a cluster still kept alive by other members), then cross-check every case in the resulting new/fixed sets individually against the *other* build's own result for that case ID. Separate the generic environment/boot-failure cases from genuine code regressions — they get reported, but never attributed to a commit.
 
 ### Attribute Regressions to Commits
 

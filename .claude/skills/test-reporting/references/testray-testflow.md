@@ -100,14 +100,17 @@ Some resolved names are not real tests — filter them out before reporting:
 
 1. For each, resolve every subtask's linked case results, filter out placeholder names, and confirm they resolve to a single build ID.
 
-1. Match subtasks across the two tasks by a **normalized error signature** — lowercase, quoted literals collapsed to a placeholder, digits collapsed to a placeholder — since subtask IDs never carry across tasks. Clusters present only in the newer task are candidate new failures; clusters present only in the older task are candidate fixes.
+1. **Diff by case ID directly — never by subtask presence.** Build the complete set of real (non-placeholder) `FAILED`/`BLOCKED` case IDs for each task by pooling the members of *every* subtask, not just ones that look distinctive. Then:
 
-1. **Cross-check every candidate individually** against the *other* build's own result for that same case ID (`filter=r_buildToCaseResult_c_buildId eq '<otherBuildId>' and r_caseToCaseResult_c_caseId eq '<caseId>'`) before reporting it as new or fixed. Signature matching alone produces false positives both ways:
+	- `new = newerCaseIds - olderCaseIds` — real regressions.
+	- `fixed = olderCaseIds - newerCaseIds` — real fixes.
+	- `still = newerCaseIds & olderCaseIds` — unchanged, not reported individually.
 
-	- A "new-only" cluster can include a test that was already failing before under a different, non-matching signature — not a new failure, just a changed one.
-	- A "fixed-only" cluster (present in the older task, absent from the newer) can include a test that is still failing in the newer build, just reassigned to a different cluster on that side, or not clustered at all. Confirm the newer build's result for that case ID is actually `PASSED` (or intentionally `BLOCKED`) before calling it fixed.
+	Do not use "subtask signature present only on one side" as the new/fixed signal. A subtask is Testray's cluster for *one build*, not a tracked entity across builds — when a cluster has several member tests and only some of them stop failing, the cluster's signature persists on both sides (kept alive by the remaining members) and the diff looks unchanged even though real fixes happened inside it. Matching at the subtask level instead of the case-ID level silently drops every one of those partial fixes — in practice this has undercounted "fixed" by an order of magnitude. Subtask signatures are still useful, but only for *labeling* a regression's cluster and error text in the report, and for the environment-incident check below — never for detecting whether something changed.
 
-1. Treat any cluster whose error text is a generic environment/boot failure (`The build failed prior to running the test.`, an `org.apache.tools.ant.TaskAdapter` stack frame, `stop-docker-containers:`, `Failed for unknown reason`, a bare `[echo]`) as one infrastructure incident, not a set of independent code regressions — there is no commit to blame for a build that never ran the test.
+1. **Cross-check every case in `new` and `fixed` individually** against the *other* build's own result for that case ID (`filter=r_buildToCaseResult_c_buildId eq '<otherBuildId>' and r_caseToCaseResult_c_caseId eq '<caseId>'`) before reporting it. This catches a second, independent failure mode: a case whose error text changed enough that it would normalize to a different signature on each side, while never actually leaving the failing set — confirm the older side was truly not failing (for `new`) or the newer side is truly `PASSED`/intentionally `BLOCKED` (for `fixed`) before trusting the set difference.
+
+1. Treat any case whose error text is a generic environment/boot failure (`The build failed prior to running the test.`, an `org.apache.tools.ant.TaskAdapter` stack frame, `stop-docker-containers:`, `Failed for unknown reason`, a bare `[echo]`) as part of one infrastructure incident, not an independent code regression — there is no commit to blame for a build that never ran the test. Apply this check per case, not per subtask: a subtask can carry a generic-sounding signature while still grouping real, individually-meaningful failures.
 
 ## URL Patterns
 
