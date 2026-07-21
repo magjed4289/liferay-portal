@@ -78,6 +78,20 @@ For `<newTaskId>` and `<previousTaskId>`, follow [`references/testray-testflow.m
 
 Follow the **Diff Two Analysis Tasks** procedure in the reference doc: diff by real case ID directly (pooling every subtask's members first — never by subtask signature presence, which hides any fix or regression that happens inside a cluster still kept alive by other members), then cross-check every case in the resulting new/fixed sets individually against the *other* build's own result for that case ID. Separate the generic environment/boot-failure cases from genuine code regressions — they get reported, but never attributed to a commit.
 
+### Sync Claims from Past Analyses
+
+The user (or a teammate) manually triages subtasks in Testray between runs — assigning one, attaching an LPD ticket, moving it to `INANALYSIS`. That work lives on the task it was done on; the next Analysis Task Testray generates for the same recurring failure starts its corresponding subtask back at `OPEN`/unassigned. Carry it forward instead of letting it look unclaimed again, per [`references/testray-testflow.md`](references/testray-testflow.md#carry-forward-subtask-claims-across-analysis-tasks):
+
+1. Query `testray-testflow/testray-subtask` **without** a `testrayTaskId` — scoped to the team and `status=INANALYSIS` — to find every historical claim across all past tasks in one call. Drop any result belonging to `<newTaskId>` itself, and any with an empty `issues` field.
+
+1. For each surviving candidate, check every Jira key in its `issues` field (comma-split) — drop the candidate if every key is Closed.
+
+1. Resolve each surviving candidate's member case IDs (same `r_subtaskToCaseResults_c_subtaskId` filter used throughout). Build a `caseId → {issues, userId, userName, sourceTaskId}` map; when two candidates claim the same case, keep the one from the higher `testrayTaskId`.
+
+1. For every subtask already resolved for `<newTaskId>` in **Diff**: skip it if it already carries its own `userId`/`issues` this cycle — never clobber fresh manual triage. Otherwise, if any member case ID is in the map, `PUT /o/c/subtasks/{newSubtaskId}` with that claim's `issues`, `r_userToSubtasks_userId`, and `dueStatus: INANALYSIS`. Never modify the *source* subtask's own fields — the claim is copied forward, not detached from where it came from.
+
+1. For each distinct `sourceTaskId` touched above, check whether *every* one of its surviving candidate cases is now accounted for — either migrated in the previous step, or independently confirmed `PASSED` in `<newTaskId>`'s build (query the case result directly; do not infer this from absence, since `NOT_FOUND_IN_BUILD` is not `PASSED`). When every case clears one of those two bars, `PATCH /o/c/tasks/{sourceTaskId}` with `{"dueStatus": {"key": "ABANDONED", "name": "Abandoned"}}` right away. A task with even one case that's merely missing or still failing unmatched is left untouched — abandoning it would lose the only remaining record of that claim.
+
 ### Attribute Changes to Commits
 
 Run this for every case in both `new` and `fixed` — not just regressions. A fixed test earns just as concrete an answer as a new one; skipping attribution on the fixed side is how "60 tests fixed" ends up reported with no explanation of why.
@@ -126,6 +140,10 @@ Both the Confluence page body and the chat reply share this structure:
 1. **Fixed**, foldable given the count is often large, one row per confirmed-fixed test: a link to its case result on the *older* build (where it last failed), that failure's error text, and an **LPD Ticket** column from the attribution step — the specific ticket, "plausible: LPD-NNNNN" when the link is topical rather than confirmed, or "Unattributed" when nothing turned up. Group the summary above the table by ticket (or "unattributed") so one fix that resolved many tests reads as one entry, not a wall of identical rows.
 
 1. **Still failing, error changed** — tests that matched a "new" signature on one side and a "fixed" signature on the other purely because the error text shifted, but the individual cross-check in **Diff** showed they were failing on both builds all along. Report these separately with both errors shown side by side; never let one leak into the New Regressions or Fixed sections.
+
+1. **Carried Forward From Past Analyses** — one row per claim migrated in **Sync Claims from Past Analyses**: test, ticket, assignee, link to the source task. Omit the section when nothing migrated this run.
+
+1. **Past Tasks Abandoned** — one row per source task the sync step just marked `ABANDONED`, with a link, so the action is visible and auditable rather than silent. Omit when none qualified.
 
 1. **Methodology** footer: the two build SHAs compared, the routine, and a one-line note that infra/log-assertor placeholder cases were excluded.
 

@@ -152,6 +152,68 @@ curl \
 
 Either way, check this before spending a git-log budget on a case — it is one HTTP call and sometimes obviates the search entirely.
 
+## Carry Forward Subtask Claims Across Analysis Tasks
+
+Testray generates a fresh set of subtasks every time a new Analysis Task is created for the same routine, but a subtask's triage state — `dueStatus`, `issues` (Jira keys), assignee — belongs to that one task and does not carry over. Manual work already done on a past task (someone set `INANALYSIS`, attached an LPD ticket, assigned themselves) looks lost on the next task's corresponding subtask unless it is deliberately copied forward.
+
+### Writable Fields, Confirmed Against the REST Module Source
+
+**Subtask** (`o/c/subtasks/{id}`, generic object endpoint, `PUT`) — `dueStatus` (`OPEN` / `INANALYSIS` / `COMPLETE` / `MERGED`, as `{"key": ..., "name": ...}`), `issues` (plain string, comma-separated Jira keys, no format validation), `r_userToSubtasks_userId` (numeric assignee — resolve it from a subtask the person already touched, e.g. `r_userToSubtasks_userId` on `GET /o/c/subtasks/{id}`, never guess from a display name):
+
+```bash
+curl --request PUT \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--header "Content-Type: application/json" \
+	--data '{"dueStatus": {"key": "INANALYSIS", "name": "In Analysis"}, "issues": "LPD-XXXXX", "r_userToSubtasks_userId": <userId>}' \
+	--url "https://testray.liferay.com/o/c/subtasks/<subtaskId>"
+```
+
+**Task** (`o/c/tasks/{id}`, generic object endpoint, `PATCH`) — a *separate* picklist from the subtask's own: `OPEN`, `INANALYSIS`, `PROCESSING`, `COMPLETE`, `ABANDONED`. Nothing server-side gates a task's status on its subtasks' states — that's purely a convention other tooling follows, not an actual constraint, so a direct abandon is safe once the completeness check below passes:
+
+```bash
+curl --request PATCH \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--header "Content-Type: application/json" \
+	--data '{"dueStatus": {"key": "ABANDONED", "name": "Abandoned"}}' \
+	--url "https://testray.liferay.com/o/c/tasks/<taskId>"
+```
+
+### Finding Historical Claims Cheaply
+
+The subtask list endpoint is not limited to one task — omit `testrayTaskId` and filter by `testrayTeamIds`/`status`/`issues` instead to search every historical task in a single call:
+
+```bash
+curl \
+	--data-urlencode "testrayTeamIds=<teamId>" \
+	--data-urlencode "status=INANALYSIS" \
+	--data-urlencode "pageSize=200" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-testflow/testray-subtask"
+```
+
+This is far cheaper than walking every past build/task to find its subtasks one at a time — in practice it returned every `INANALYSIS` Headless subtask in Testray's entire history (dozens, not hundreds) in one page.
+
+### Matching a Claim to the Current Task
+
+Subtask IDs never carry across tasks and error-signature text can drift, so match by **case ID** (the stable test identity), not by subtask ID or name: resolve a candidate subtask's member case IDs the same way as anywhere else in this doc (`r_subtaskToCaseResults_c_subtaskId` filter), and check whether any of them are also a member of a subtask in the task being updated.
+
+### Before Abandoning a Source Task, Verify — Don't Infer — Every Case Is Accounted For
+
+A case that didn't get migrated because it no longer shows up in the new task's subtasks is not automatically safe to ignore. Query that case's result directly in the newer build and require an explicit `PASSED` (or a status the run intentionally accepts) before counting it as resolved:
+
+```bash
+curl \
+	--data-urlencode "filter=r_buildToCaseResult_c_buildId eq '<newerBuildId>' and r_caseToCaseResult_c_caseId eq '<caseId>'" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/caseresults"
+```
+
+`NOT_FOUND_IN_BUILD` is not `PASSED` — it means the case simply wasn't tracked in that build (an environment/shard rotation, most likely), and its status is genuinely unknown. Confirmed live: of one task's ten claimed cases, five were `PASSED` in the newer build and five came back `NOT_FOUND_IN_BUILD` — the task was correctly left un-abandoned rather than guessed at.
+
 ## URL Patterns
 
 Deep-linkable Testray UI routes, useful for citing evidence in a report:
@@ -159,7 +221,6 @@ Deep-linkable Testray UI routes, useful for citing evidence in a report:
 | What | Pattern |
 | --- | --- |
 | Analysis Task | `https://testray.liferay.com/#/testflow/<taskId>` |
+| Subtask | `https://testray.liferay.com/#/testflow/<taskId>/subtasks/<subtaskId>` |
 | Build | `https://testray.liferay.com/#/project/<projectId>/routines/<routineId>/build/<buildId>` |
 | Case result | `https://testray.liferay.com/#/project/<projectId>/routines/<routineId>/build/<buildId>/case-result/<caseResultId>` |
-
-There is no dedicated URL for a single subtask — link to the parent Analysis Task and cite the `ST-<n>` badge for the reader to find it.
