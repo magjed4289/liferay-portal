@@ -72,7 +72,7 @@ Create the tracking page (see **State**) recording only the new task ID. Tell th
 
 ### Resolve Both Tasks
 
-For `<newTaskId>` and `<previousTaskId>`, follow [`references/testray-testflow.md`](references/testray-testflow.md) to fetch and dedupe each task's subtasks, resolve every subtask's linked case results (filtering out placeholder/log-assertor names), and confirm the single build ID each task's case results resolve to. Note each build's own `gitHash`, `caseResultFailed`, and `caseResultPassed` from `/o/c/builds/<buildId>` — these back the summary table.
+For `<newTaskId>` and `<previousTaskId>`, follow [`references/testray-testflow.md`](references/testray-testflow.md) to fetch and dedupe each task's subtasks, resolve every subtask's linked case results (filtering out placeholder/log-assertor names), and confirm the single build ID each task's case results resolve to. Note each build's `gitHash` from `/o/c/builds/<buildId>`, but get `failed`/`passed` from the **Headless** entry of that build's `testray-teams-metrics` (per the reference doc's **Report the Team-Scoped Total** section) — never the build's own top-level `caseResultFailed`/`caseResultPassed`, which sum every team sharing that build. These back the summary table.
 
 ### Diff
 
@@ -110,7 +110,7 @@ Both the Confluence page body and the chat reply share this structure:
 
 	| Metric | Value |
 	| --- | --- |
-	| Current failures (total) | `<newer build's caseResultFailed>` |
+	| Current failures (total) | `<newer build's Headless-team failed count, from testray-teams-metrics>` |
 	| Current failures, excluding the environment-incident cluster(s) | `<total minus every FAILED case result inside a generic boot-failure subtask>` |
 	| Tests fixed since the last analysis | `<count of individually-confirmed fixes>` |
 	| Issues to be claimed by the team | `<count of unattributed regressions, plus any team-member-authored ones>` |

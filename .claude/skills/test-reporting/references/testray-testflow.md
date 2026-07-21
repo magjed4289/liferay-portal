@@ -74,6 +74,24 @@ Across every subtask of one Analysis Task, `r_buildToCaseResult_c_buildId` is un
 
 `score` is a rolling weight accumulated across a window of recent builds, not the current build's failure count — expect `sum(score)` across all subtasks to exceed the resolved build's own failed-case count. Use the **linked case result count**, not `score`, whenever a per-build number is needed.
 
+## Report the Team-Scoped Total, Not the Build's Raw Total
+
+A build is shared Jenkins infrastructure — multiple teams' routines point at the same build, and Testray tags each case result with an owning team (`r_teamToCaseResult_c_teamId`) after the fact. The build object's own `caseResultFailed` / `caseResultPassed` fields sum **every** team sharing that build, not just the one this skill cares about. Using that raw field as "current failures" overstates the number, sometimes substantially (confirmed: a build reporting `caseResultFailed: 114` was actually `99` Headless-owned plus `15` from other teams).
+
+Get the team-scoped breakdown directly instead of re-deriving it:
+
+```bash
+curl \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-status-metrics/by-testray-buildId/<buildId>/testray-teams-metrics"
+```
+
+Each item is `{testrayTeamId, testrayTeamName, testrayStatusMetric: {failed, passed, blocked, untested, testfix, total}}`. Match `testrayTeamName` to the team this run cares about (`Headless`) and use *that* entry's `failed`/`passed` for every headline number — never the build's own top-level fields.
+
+This does not, by itself, mean the subtask/case-result data pulled earlier is contaminated — in practice, every case result belonging to another team turned out to be an infra placeholder (`PortalLogAssertorTest-*`, per-executor slots) that the placeholder filter already excludes, so the individual test-level diff was unaffected. But verify this rather than assume it: cross-check that `<team's failed count> + <team's blocked count>` equals the real (placeholder-filtered) `FAILED`/`BLOCKED` count computed from the subtask data. If they don't match, some other team's *named* test has leaked into the pool, and case results should be filtered by `r_teamToCaseResult_c_teamId eq '<teamId>'` directly rather than trusted from subtask linkage alone.
+
 ## Resolve Case Names
 
 Batch-resolve `r_caseToCaseResult_c_caseId` values to human-readable test names, 25 at a time (URL length limit):
