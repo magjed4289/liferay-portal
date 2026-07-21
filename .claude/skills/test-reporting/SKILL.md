@@ -92,6 +92,8 @@ The user (or a teammate) manually triages subtasks in Testray between runs — a
 
 1. For each distinct `sourceTaskId` touched above, check whether *every* one of its surviving candidate cases is now accounted for — either migrated in the previous step, or independently confirmed `PASSED` in `<newTaskId>`'s build (query the case result directly; do not infer this from absence, since `NOT_FOUND_IN_BUILD` is not `PASSED`). When every case clears one of those two bars, `PATCH /o/c/tasks/{sourceTaskId}` with `{"dueStatus": {"key": "ABANDONED", "name": "Abandoned"}}` right away. A task with even one case that's merely missing or still failing unmatched is left untouched — abandoning it would lose the only remaining record of that claim.
 
+1. Separately, check `<previousTaskId>` specifically (the task this run's diff used as the baseline, regardless of whether it produced any migration candidates above): fetch its subtasks and check whether *any* carry `status: INANALYSIS`. If none do — every subtask is still at the auto-generated `OPEN`, nobody ever triaged it — there is nothing on it to lose, so abandon it directly, the same `PATCH` as above, with no matching step required. This is what catches a fully-untouched previous task that the claim search above would otherwise never consider, since it never had a claim to find in the first place. Do not widen this check to older tasks beyond `<previousTaskId>` — that would be a much larger sweep than one run should take on by itself.
+
 ### Attribute Changes to Commits
 
 Run this for every case in both `new` and `fixed` — not just regressions. A fixed test earns just as concrete an answer as a new one; skipping attribution on the fixed side is how "60 tests fixed" ends up reported with no explanation of why.
@@ -143,7 +145,7 @@ Both the Confluence page body and the chat reply share this structure:
 
 1. **Carried Forward From Past Analyses** — one row per claim migrated in **Sync Claims from Past Analyses**: test, ticket, assignee, link to the source task. Omit the section when nothing migrated this run.
 
-1. **Past Tasks Abandoned** — one row per source task the sync step just marked `ABANDONED`, with a link, so the action is visible and auditable rather than silent. Omit when none qualified.
+1. **Past Tasks Abandoned** — one row per source task the sync step just marked `ABANDONED`, with a link and which of the two reasons applied (every live claim migrated/resolved, or the task had zero claims to begin with), so the action is visible and auditable rather than silent. Omit when none qualified.
 
 1. **Methodology** footer: the two build SHAs compared, the routine, and a one-line note that infra/log-assertor placeholder cases were excluded.
 

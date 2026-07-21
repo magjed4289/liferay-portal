@@ -214,6 +214,10 @@ curl \
 
 `NOT_FOUND_IN_BUILD` is not `PASSED` — it means the case simply wasn't tracked in that build (an environment/shard rotation, most likely), and its status is genuinely unknown. Confirmed live: of one task's ten claimed cases, five were `PASSED` in the newer build and five came back `NOT_FOUND_IN_BUILD` — the task was correctly left un-abandoned rather than guessed at.
 
+### A Task with No Claims at All Is a Separate, Simpler Case
+
+The claim search above only ever surfaces tasks that have at least one `INANALYSIS` subtask somewhere — a task where every subtask is still sitting at the auto-generated `OPEN`, untouched by anyone, never appears as a candidate and so never gets checked for abandonment by the logic above. That's a real gap, not a non-issue: confirmed live on task `500153871` (98 subtasks, all `OPEN`, zero with any assignee or `issues`) — a fully-untouched task that the claim-matching path would have ignored forever. There is nothing on a task like this to lose, so it doesn't need the case-by-case completeness check at all: fetch its subtasks, and if none carry `status: INANALYSIS`, abandon it directly. `<previousTaskId>` is the one task worth checking this way on every run, since it's the one this run's diff just used as the baseline and is now superseded — do not extend the same sweep to older tasks beyond it.
+
 ## URL Patterns
 
 Deep-linkable Testray UI routes, useful for citing evidence in a report:
