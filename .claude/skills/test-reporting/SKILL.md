@@ -82,6 +82,18 @@ For `<newTaskId>` and `<previousTaskId>`, follow [`references/testray-testflow.m
 
 Follow the **Diff Two Analysis Tasks** procedure in the reference doc: diff by real case ID directly (pooling every subtask's members first — never by subtask signature presence, which hides any fix or regression that happens inside a cluster still kept alive by other members), then cross-check every case in the resulting new/fixed sets individually against the *other* build's own result for that case ID. Separate the generic environment/boot-failure cases from genuine code regressions — they get reported, but never attributed to a commit.
 
+### Resolve Fixed-Cluster Ticket Lifecycle
+
+For every older-task subtask behind a fixed or partially-fixed case this run — grouped by that subtask, not by individual case — follow [`references/testray-testflow.md`](references/testray-testflow.md#resolve-a-fixed-clusters-ticket-lifecycle):
+
+1. No ticket in that subtask's `issues` → report it as **Unattributed (no ticket)** immediately; do not search git log for it.
+
+1. Ticket found → resolve its Jira parent/subtasks, search the compared commit range for any related ID, discard housekeeping-only matches, and classify the cluster: fully fixed with a substantive commit found → propose close; fully fixed with none found → needs manual verification; partially fixed with the same error persisting → propose comment only; partially fixed with a different error → propose close anyway.
+
+1. **This is report-only for now** — compute and report the proposed action (close, comment, or neither), but do not call the Jira transition or comment endpoints yet.
+
+This is the only attribution a fixed cluster gets — it either resolves here (ticket found) or is reported unattributed directly (no ticket), with no git-log fallback either way. **Attribute Changes to Commits** below is scoped to new regressions only.
+
 ### Sync Claims from Past Analyses
 
 The user (or a teammate) manually triages subtasks in Testray between runs — assigning one, attaching an LPD ticket, moving it to `INANALYSIS`. That work lives on the task it was done on; the next Analysis Task Testray generates for the same recurring failure starts its corresponding subtask back at `OPEN`/unassigned. Carry it forward instead of letting it look unclaimed again, per [`references/testray-testflow.md`](references/testray-testflow.md#carry-forward-subtask-claims-across-analysis-tasks):
@@ -100,9 +112,9 @@ The user (or a teammate) manually triages subtasks in Testray between runs — a
 
 ### Attribute Changes to Commits
 
-Run this for every case in both `new` and `fixed` — not just regressions. A fixed test earns just as concrete an answer as a new one; skipping attribution on the fixed side is how "60 tests fixed" ends up reported with no explanation of why.
+Run this for every **new regression** only — a fixed cluster is handled entirely by **Resolve Fixed-Cluster Ticket Lifecycle** above (resolved there via its ticket, or reported unattributed directly when it has none); this section is not a fallback for those.
 
-For each case (or group of cases sharing one error signature — a single fix or regression commonly resolves or breaks several tests in the same feature area at once, so group before attributing rather than repeating the search per test):
+For each new-regression case (or group of cases sharing one error signature — a single regression commonly breaks several tests in the same feature area at once, so group before attributing rather than repeating the search per test):
 
 1. **Check Testray's own case history first**, per [`references/testray-testflow.md`](references/testray-testflow.md#check-case-history-for-a-linked-jira-issue-before-attributing-by-commit) — an `issues` entry landing inside the compared date range is a direct answer and skips the rest of this section entirely. A long tail of older, unrelated tickets is still worth noting in the report as evidence of chronic flakiness, even when it doesn't name the fix.
 
@@ -110,7 +122,7 @@ For each case (or group of cases sharing one error signature — a single fix or
 
 1. In the `liferay-portal` clone, run `git log <olderBuildSha>..<newerBuildSha> -- <path>` scoped to that module, then widen the search (feature area, DTO class name, error keyword via `git log -S"<term>"`) until a commit or tight commit cluster explains the change. Read each candidate's full message and diff before deciding. Label the attribution **plausible** rather than confirmed when the link is topical/file-level rather than a direct match to the assertion that changed.
 
-1. For a **new regression**, resolve the commit's author email and check it against the roster fetched in **References**:
+1. Resolve the commit's author email and check it against the roster fetched in **References**:
 	- **On the roster** → this is the team's own work. The regression is squarely the team's to fix.
 	- **Not on the roster** → search the `liferay-headless/liferay-portal` GitHub repository for an existing "Intruders 🦹‍♂️" issue mentioning the commit's short SHA:
 
@@ -143,7 +155,9 @@ Both the Confluence page body and the chat reply share this structure:
 
 1. **Issues to be claimed**, the unattributed or team-caused regressions, so the team has a concrete pickup list.
 
-1. **Fixed**, foldable given the count is often large, one row per confirmed-fixed test: a link to its case result on the *older* build (where it last failed), that failure's error text, and an **LPD Ticket** column from the attribution step — the specific ticket, "plausible: LPD-NNNNN" when the link is topical rather than confirmed, or "Unattributed" when nothing turned up. Group the summary above the table by ticket (or "unattributed") so one fix that resolved many tests reads as one entry, not a wall of identical rows.
+1. **Fixed**, foldable given the count is often large, one row per confirmed-fixed test: a link to its case result on the *older* build (where it last failed), that failure's error text, and an **LPD Ticket** column from **Resolve Fixed-Cluster Ticket Lifecycle** — the specific ticket when a substantive commit confirmed it, "needs manual verification" when a ticket exists but nothing in range confirms it, or "Unattributed (no ticket)" when the cluster never carried one. Group the summary above the table by ticket (or "unattributed") so one fix that resolved many tests reads as one entry, not a wall of identical rows.
+
+1. **Fixed Tickets — Proposed Jira Actions**, one row per ticketed cluster **Resolve Fixed-Cluster Ticket Lifecycle** touched this run: ticket, cluster, classification, and the exact action that would be taken (close + comment, comment only, or needs manual verification). Report-only — nothing here has actually been written to Jira yet. Omit the section entirely when no fixed cluster carried a ticket this run.
 
 1. **Still failing, error changed** — tests that matched a "new" signature on one side and a "fixed" signature on the other purely because the error text shifted, but the individual cross-check in **Diff** showed they were failing on both builds all along. Report these separately with both errors shown side by side; never let one leak into the New Regressions or Fixed sections.
 
