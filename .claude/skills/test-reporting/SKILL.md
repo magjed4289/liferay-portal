@@ -1,6 +1,6 @@
 ---
 
-argument-hint: '<newAnalysisTaskIdOrUrl>'
+argument-hint: '[newAnalysisTaskIdOrUrl]'
 description: Diff two Testray Analysis Tasks for ci:test:headless, attribute new regressions to commits, and check whether the team caused them.
 name: test-reporting
 
@@ -35,7 +35,7 @@ Some steps need a `liferay-portal` clone to run `git log` against (to find the c
 
 ### New Analysis Task
 
-`${ARGUMENTS}` is the Testray Analysis Task to compare against — either a bare task ID or a full `https://testray.liferay.com/#/testflow/<taskId>` URL. When absent, ask the user for it; do not guess the latest task automatically, since triggering a fresh analysis run is a manual step on their end.
+`${ARGUMENTS}` is the Testray Analysis Task to compare against — either a bare task ID or a full `https://testray.liferay.com/#/testflow/<taskId>` URL. When omitted, resolve it instead of asking: see **Resolve `<newTaskId>`** in the workflow below.
 
 ### Baseline (Previous Analysis Task)
 
@@ -65,6 +65,10 @@ Analysis Task <newTaskId> compared against <previousTaskId> — generated <date>
 On the very first run (no page exists), create it with that marker line naming only `<newTaskId>` (no `previousTaskId` yet, since there is nothing to compare against), plus one sentence explaining that the next run will be the first real diff.
 
 ## Workflow
+
+### Resolve `<newTaskId>`
+
+When `${ARGUMENTS}` names a task, that is `<newTaskId>` — move on to **First Run** or **Resolve Both Tasks**. Otherwise, follow [`references/testray-testflow.md`](references/testray-testflow.md#find-or-create-the-freshest-analysis-task): find the freshest `DONE` build for the team routine, reuse its Task if one already exists, or create the Task and generate its subtasks if none does. Never let more than one task exist for the same build — that has already taken the routine down in production once; if the build already has more than one task, or a race creates one during this run, follow the reference doc rather than guessing which to keep. Tell the user which path was taken — reused an existing task, or created a new one.
 
 ### First Run
 

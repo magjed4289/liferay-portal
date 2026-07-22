@@ -36,6 +36,66 @@ curl \
 	--url "https://testray.liferay.com/o/c/routines"
 ```
 
+## Find or Create the Freshest Analysis Task
+
+When the caller doesn't name a Task, resolve `<newTaskId>` from the routine itself instead of asking: find the freshest build, reuse its Task if one exists, or create one.
+
+### Find the Freshest `DONE` Build
+
+```bash
+curl \
+	--data-urlencode "filter=r_routineToBuilds_c_routineId eq '<routineId>'" \
+	--data-urlencode "sort=dateCreated:desc" \
+	--data-urlencode "pageSize=5" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/builds"
+```
+
+Walk the page newest-first and take the first build whose `importStatus.key` is `DONE` — the newest build is sometimes still importing. Unlike `TestrayAutomatedTasks`'s `get_latest_done_build` (`utils/liferay_utils/testray_utils/testray_helpers.py`), which only ever looks at `builds[0]` and gives up with no result when that one isn't `DONE` yet, walk back through the small page fetched above rather than bailing on the very first build.
+
+### Reuse an Existing Task for That Build
+
+```bash
+curl \
+	--data-urlencode "filter=r_buildToTasks_c_buildId eq '<buildId>'" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/tasks"
+```
+
+- **Exactly one task exists, not `ABANDONED`** → that is `<newTaskId>`. Reuse it regardless of its own `dueStatus` (`OPEN`/`INANALYSIS`/`PROCESSING`/`COMPLETE` are all fine to diff against) — this skill only reads a task, it never needs it in any particular state, unlike `TestrayAutomatedTasks`'s `prepare_task` (`testray_helpers.py`), which skips reuse on `COMPLETE` because *its* job is to actively triage, not just report.
+- **Exactly one task exists, `ABANDONED`** → stop and surface this to the user rather than creating a second task for the same build; that's an unusual state worth a human look, not a silent workaround.
+- **No task exists** → create one, below.
+- **More than one task exists** → stop immediately and surface every one of them (with its link and status) to the user. Do not guess which to keep, abandon one automatically, or create a third. This exact situation has already taken the Headless routine down in production: two tasks existed for one build, the build's own results API couldn't resolve which to use, and the routine was stuck until a human manually abandoned the extra one. Treat it the same way here — a case for a person to resolve, not code.
+
+### Create the Task and Its Subtasks
+
+```bash
+curl --request POST \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--header "Content-Type: application/json" \
+	--data '{"name": "<build name>", "r_buildToTasks_c_buildId": <buildId>, "dueStatus": {"key": "INANALYSIS", "name": "In Analysis"}}' \
+	--url "https://testray.liferay.com/o/c/tasks/"
+```
+
+Before triggering clustering, re-check for the same build one more time (identical query to **Reuse an Existing Task for That Build**, above). This closes the race where something else — most notably `TestrayAutomatedTasks`'s own cron (`.github/workflows/main.yml`, Mon/Wed 6 AM, plus `workflow_dispatch`, with no locking of its own) — creates a task for the same build in the moment between the first check and this one:
+
+- **Still just the one we made** → proceed.
+- **A second task now exists** → this is the exact duplicate-task incident described above, caught before it can do any damage. Abandon the one just created — same `PATCH .../o/c/tasks/{id}` with `{"dueStatus": {"key": "ABANDONED", "name": "Abandoned"}}` documented under **Carry Forward Subtask Claims Across Analysis Tasks** below — rather than the other one, since ours has no subtasks yet and nothing depends on it. Reuse the pre-existing task as `<newTaskId>` instead (going through the same reuse check above), and mention to the user that a race was caught and resolved this way.
+
+Then trigger clustering **exactly once** — read the regeneration quirk above first; a second call against the same task multiplies its subtasks, not refreshes them:
+
+```bash
+curl --request POST \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-testflow/<newTaskId>"
+```
+
+This call is synchronous and returns `{"subtaskAmount": N}` directly (confirmed live — no job ID, no polling needed). Treat a missing or zero `subtaskAmount` as a real failure worth surfacing, not a silent proceed.
+
 ## Fetch an Analysis Task's Subtasks
 
 ```bash
