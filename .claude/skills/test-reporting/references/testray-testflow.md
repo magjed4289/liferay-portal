@@ -274,7 +274,12 @@ curl \
 	--silent
 ```
 
-Look for one whose `to.statusCategory.key` is `"done"`. None available from the current status → report "cannot auto-close from status `<current>`, needs a manual transition" instead of guessing a multi-step workflow path.
+Look for one whose `to.statusCategory.key` is `"done"`. None available from the current status → before falling back to "needs a manual transition," check whether the ticket has a `Technical Task` among the `subtasks` already resolved under **A Ticket ID Rarely Matches the Commit Directly — Expand to Parent/Subtasks First** above. Liferay's convention splits a tracking `Task` from the `Technical Task` that actually carries the implementing commit — the tracking `Task` itself often has no direct path to `Closed` at all, while its `Technical Task` does. Confirmed live: `LPD-98577` (issuetype `Task`, status `In Progress`) had no `Closed` transition, but its subtask `LPD-98578` (issuetype `Technical Task`, the one the commit `cb4a41d` was actually filed under) did — closing `LPD-98578` first is what let `LPD-98577` close afterward.
+
+When a `Technical Task` subtask exists, check `GET .../issue/<technicalTaskKey>/transitions` the same way:
+
+- **A `done`-category transition exists on the Technical Task** → propose closing the Technical Task first (the "Fixed as of `<newerBuildSha>`" comment belongs there, since that is where the implementing commit is referenced), then re-check the parent Task's own transitions — closing every subtask commonly unlocks or auto-fires the parent's own close, so report the plan as "close `<technicalTaskKey>`, then `<ticketKey>` should follow" rather than treating the parent's missing transition as a dead end.
+- **No `Technical Task` subtask, or it also has no `done`-category transition** → this is the actual dead end; report "cannot auto-close from status `<current>`, needs a manual transition" as before.
 
 ### Not Yet Wired to Write
 
