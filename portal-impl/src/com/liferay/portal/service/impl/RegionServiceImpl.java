@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.permission.CountryPermissionUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.RegionUpdateInfo;
 import com.liferay.portal.service.base.RegionServiceBaseImpl;
 
 import java.util.LinkedHashMap;
@@ -25,6 +26,19 @@ import java.util.List;
  * @author Brian Wing Shun Chan
  */
 public class RegionServiceImpl extends RegionServiceBaseImpl {
+
+	@Override
+	public List<Region> addOrUpdateRegions(
+			long countryId, List<RegionUpdateInfo> regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		CountryPermissionUtil.check(
+			getPermissionChecker(), countryId, ActionKeys.UPDATE);
+
+		return regionLocalService.addOrUpdateRegions(
+			countryId, regionUpdateInfos, serviceContext);
+	}
 
 	@Override
 	public Region addRegion(

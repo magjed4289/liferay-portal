@@ -30,6 +30,17 @@ public class RegionServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.portal.service.impl.RegionServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+	public static List<Region> addOrUpdateRegions(
+			long countryId,
+			List<com.liferay.portal.kernel.util.RegionUpdateInfo>
+				regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().addOrUpdateRegions(
+			countryId, regionUpdateInfos, serviceContext);
+	}
+
 	public static Region addRegion(
 			String externalReferenceCode, long countryId, boolean active,
 			String name, double position, String regionCode,
@@ -173,4 +184,4 @@ public class RegionServiceUtil {
 	private static volatile RegionService _service;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-502938480
+// LIFERAY-SERVICE-BUILDER-HASH:-353083077

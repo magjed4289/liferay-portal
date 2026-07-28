@@ -26,6 +26,18 @@ public class RegionServiceWrapper
 	}
 
 	@Override
+	public java.util.List<Region> addOrUpdateRegions(
+			long countryId,
+			java.util.List<com.liferay.portal.kernel.util.RegionUpdateInfo>
+				regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _regionService.addOrUpdateRegions(
+			countryId, regionUpdateInfos, serviceContext);
+	}
+
+	@Override
 	public Region addRegion(
 			String externalReferenceCode, long countryId, boolean active,
 			String name, double position, String regionCode,
@@ -199,4 +211,4 @@ public class RegionServiceWrapper
 	private RegionService _regionService;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-231685761
+// LIFERAY-SERVICE-BUILDER-HASH:-1744992153

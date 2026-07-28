@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.RegionUpdateInfo;
 
 import java.io.Serializable;
 
@@ -67,6 +68,10 @@ public interface RegionLocalService
 	 *
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.portal.service.impl.RegionLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the region local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link RegionLocalServiceUtil} if injection and service tracking are not available.
 	 */
+	public List<Region> addOrUpdateRegions(
+			long countryId, List<RegionUpdateInfo> regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws PortalException;
 
 	/**
 	 * Adds the region to the database. Also notifies the appropriate model listeners.
@@ -405,4 +410,4 @@ public interface RegionLocalService
 		throws E;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-751349059
+// LIFERAY-SERVICE-BUILDER-HASH:1359148948

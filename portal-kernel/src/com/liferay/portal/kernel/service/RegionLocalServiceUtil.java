@@ -36,6 +36,16 @@ public class RegionLocalServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.portal.service.impl.RegionLocalServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+	public static List<Region> addOrUpdateRegions(
+			long countryId,
+			List<com.liferay.portal.kernel.util.RegionUpdateInfo>
+				regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().addOrUpdateRegions(
+			countryId, regionUpdateInfos, serviceContext);
+	}
 
 	/**
 	 * Adds the region to the database. Also notifies the appropriate model listeners.
@@ -475,4 +485,4 @@ public class RegionLocalServiceUtil {
 	private static volatile RegionLocalService _service;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-710628756
+// LIFERAY-SERVICE-BUILDER-HASH:66966103

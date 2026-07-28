@@ -28,6 +28,18 @@ public class RegionLocalServiceWrapper
 		_regionLocalService = regionLocalService;
 	}
 
+	@Override
+	public java.util.List<Region> addOrUpdateRegions(
+			long countryId,
+			java.util.List<com.liferay.portal.kernel.util.RegionUpdateInfo>
+				regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _regionLocalService.addOrUpdateRegions(
+			countryId, regionUpdateInfos, serviceContext);
+	}
+
 	/**
 	 * Adds the region to the database. Also notifies the appropriate model listeners.
 	 *
@@ -556,4 +568,4 @@ public class RegionLocalServiceWrapper
 	private RegionLocalService _regionLocalService;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:185711684
+// LIFERAY-SERVICE-BUILDER-HASH:-987857633

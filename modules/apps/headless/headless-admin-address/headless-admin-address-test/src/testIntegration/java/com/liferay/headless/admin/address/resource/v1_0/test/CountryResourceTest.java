@@ -15,6 +15,7 @@ import com.liferay.headless.admin.address.client.pagination.Pagination;
 import com.liferay.headless.admin.address.client.resource.v1_0.CountryResource;
 import com.liferay.headless.admin.address.client.serdes.v1_0.CountrySerDes;
 import com.liferay.petra.function.UnsafeTriConsumer;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.CountryA2Exception;
 import com.liferay.portal.kernel.exception.CountryA3Exception;
 import com.liferay.portal.kernel.exception.DuplicateCountryException;
@@ -205,6 +206,21 @@ public class CountryResourceTest extends BaseCountryResourceTestCase {
 		country.setNumber(existingCountry.getNumber());
 
 		_testPostCountryProblem(country, DuplicateCountryException.class);
+	}
+
+	@Test
+	public void testPutCountryWithManyRegionsPerformance() throws Exception {
+		long smallBatchDuration = _testPutCountryWithRegionsDuration(20);
+		long largeBatchDuration = _testPutCountryWithRegionsDuration(100);
+
+		Assert.assertTrue(
+			StringBundler.concat(
+				"Updating a country with 100 regions took ",
+				largeBatchDuration, "ms, more than 15x the ",
+				smallBatchDuration, "ms taken for 20 regions (5x fewer); ",
+				"update time appears to scale worse than linearly with the ",
+				"region count"),
+			largeBatchDuration < (smallBatchDuration * 15));
 	}
 
 	@Override
@@ -641,6 +657,34 @@ public class CountryResourceTest extends BaseCountryResourceTestCase {
 			Assert.assertEquals(
 				exceptionClass.getSimpleName(), jsonObject.get("type"));
 		}
+	}
+
+	private long _testPutCountryWithRegionsDuration(int count)
+		throws Exception {
+
+		Country country = _addCountry(randomCountry());
+
+		List<Region> regions = new ArrayList<>();
+
+		for (int i = 0; i < count; i++) {
+			Region region = new Region();
+
+			region.setActive(true);
+			region.setExternalReferenceCode(RandomTestUtil.randomString());
+			region.setName(RandomTestUtil.randomString());
+			region.setPosition(0D);
+			region.setRegionCode(RandomTestUtil.randomString());
+
+			regions.add(region);
+		}
+
+		country.setRegions(regions.toArray(new Region[0]));
+
+		long startTime = System.currentTimeMillis();
+
+		countryResource.putCountry(country.getId(), country);
+
+		return System.currentTimeMillis() - startTime;
 	}
 
 	private final List<String> _countryA2s = new ArrayList<>();

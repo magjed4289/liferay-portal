@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.RegionUpdateInfo;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,11 @@ public interface RegionService extends BaseService {
 	 *
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.portal.service.impl.RegionServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the region remote service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link RegionServiceUtil} if injection and service tracking are not available.
 	 */
+	public List<Region> addOrUpdateRegions(
+			long countryId, List<RegionUpdateInfo> regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws PortalException;
+
 	public Region addRegion(
 			String externalReferenceCode, long countryId, boolean active,
 			String name, double position, String regionCode,
@@ -135,4 +141,4 @@ public interface RegionService extends BaseService {
 		throws PortalException;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1388620326
+// LIFERAY-SERVICE-BUILDER-HASH:-2082551031

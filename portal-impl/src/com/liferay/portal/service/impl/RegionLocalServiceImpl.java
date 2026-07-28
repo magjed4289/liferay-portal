@@ -15,6 +15,7 @@ import com.liferay.petra.sql.dsl.query.JoinStep;
 import com.liferay.petra.sql.dsl.query.OrderByStep;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.exception.DuplicateRegionException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.RegionCodeException;
@@ -42,18 +43,82 @@ import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.RegionUpdateInfo;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.service.base.RegionLocalServiceBaseImpl;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Brian Wing Shun Chan
  */
 public class RegionLocalServiceImpl extends RegionLocalServiceBaseImpl {
+
+	private static final int _REGIONS_BATCH_SIZE = 20;
+
+	@Override
+	public List<Region> addOrUpdateRegions(
+			long countryId, List<RegionUpdateInfo> regionUpdateInfos,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		Map<String, Region> existingRegionsMap = new HashMap<>();
+
+		for (Region region :
+				getRegions(
+					countryId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+
+			existingRegionsMap.put(region.getExternalReferenceCode(), region);
+		}
+
+		List<Region> regions = new ArrayList<>();
+
+		int count = 0;
+
+		for (RegionUpdateInfo regionUpdateInfo : regionUpdateInfos) {
+			Region existingRegion = existingRegionsMap.get(
+				regionUpdateInfo.getExternalReferenceCode());
+
+			Region region = null;
+
+			if (existingRegion != null) {
+				region = updateRegion(
+					regionUpdateInfo.getExternalReferenceCode(),
+					existingRegion.getRegionId(), regionUpdateInfo.isActive(),
+					regionUpdateInfo.getName(), regionUpdateInfo.getPosition(),
+					regionUpdateInfo.getRegionCode());
+			}
+			else {
+				region = addRegion(
+					regionUpdateInfo.getExternalReferenceCode(), countryId,
+					regionUpdateInfo.isActive(), regionUpdateInfo.getName(),
+					regionUpdateInfo.getPosition(),
+					regionUpdateInfo.getRegionCode(), serviceContext);
+			}
+
+			if (regionUpdateInfo.getTitleMap() != null) {
+				updateRegionLocalizations(
+					region, regionUpdateInfo.getTitleMap());
+			}
+
+			regions.add(region);
+
+			if (++count % _REGIONS_BATCH_SIZE == 0) {
+				Session session = regionPersistence.openSession();
+
+				session.flush();
+				session.clear();
+			}
+		}
+
+		return regions;
+	}
 
 	@Indexable(type = IndexableType.REINDEX)
 	@Override

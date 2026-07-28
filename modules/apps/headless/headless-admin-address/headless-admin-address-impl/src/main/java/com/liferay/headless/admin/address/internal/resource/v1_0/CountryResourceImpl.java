@@ -21,12 +21,12 @@ import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.search.filter.TermFilter;
 import com.liferay.portal.kernel.service.CountryLocalService;
 import com.liferay.portal.kernel.service.CountryService;
-import com.liferay.portal.kernel.service.RegionLocalService;
 import com.liferay.portal.kernel.service.RegionService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.RegionUpdateInfo;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.pagination.Page;
@@ -37,6 +37,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -346,39 +347,6 @@ public class CountryResourceImpl
 		return putCountry(serviceBuilderCountry.getCountryId(), country);
 	}
 
-	private com.liferay.portal.kernel.model.Region _addOrUpdateRegion(
-			com.liferay.portal.kernel.model.Country serviceBuilderCountry,
-			Region region)
-		throws Exception {
-
-		com.liferay.portal.kernel.model.Region serviceBuilderRegion =
-			_regionLocalService.fetchRegionByExternalReferenceCode(
-				region.getExternalReferenceCode(),
-				contextCompany.getCompanyId());
-
-		if (serviceBuilderRegion != null) {
-			serviceBuilderRegion = _regionService.updateRegion(
-				region.getExternalReferenceCode(),
-				serviceBuilderRegion.getRegionId(), region.getActive(),
-				region.getName(), region.getPosition(), region.getRegionCode());
-		}
-		else {
-			serviceBuilderRegion = _regionService.addRegion(
-				GetterUtil.getString(region.getExternalReferenceCode()),
-				serviceBuilderCountry.getCountryId(),
-				GetterUtil.get(region.getActive(), true), region.getName(),
-				GetterUtil.getDouble(region.getPosition()),
-				region.getRegionCode(), _getServiceContext());
-		}
-
-		if (region.getTitle_i18n() != null) {
-			_regionLocalService.updateRegionLocalizations(
-				serviceBuilderRegion, region.getTitle_i18n());
-		}
-
-		return serviceBuilderRegion;
-	}
-
 	private ServiceContext _getServiceContext() throws Exception {
 		if (contextHttpServletRequest != null) {
 			ServiceContext serviceContext = ServiceContextFactory.getInstance(
@@ -436,9 +404,20 @@ public class CountryResourceImpl
 			}
 		}
 
+		List<RegionUpdateInfo> regionUpdateInfos = new ArrayList<>();
+
 		for (Region region : country.getRegions()) {
-			_addOrUpdateRegion(serviceBuilderCountry, region);
+			regionUpdateInfos.add(
+				new RegionUpdateInfo(
+					region.getExternalReferenceCode(),
+					GetterUtil.get(region.getActive(), true), region.getName(),
+					GetterUtil.getDouble(region.getPosition()),
+					region.getRegionCode(), region.getTitle_i18n()));
 		}
+
+		_regionService.addOrUpdateRegions(
+			serviceBuilderCountry.getCountryId(), regionUpdateInfos,
+			_getServiceContext());
 
 		return serviceBuilderCountry;
 	}
@@ -459,9 +438,6 @@ public class CountryResourceImpl
 
 	@Reference
 	private Language _language;
-
-	@Reference
-	private RegionLocalService _regionLocalService;
 
 	@Reference
 	private RegionService _regionService;
