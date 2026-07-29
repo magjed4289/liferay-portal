@@ -142,7 +142,9 @@ Both the Confluence page body and the chat reply share this structure:
 	| Metric | Value |
 	| --- | --- |
 	| Current failures (total) | `<newer build's Headless-team failed count, from testray-teams-metrics>` |
-	| Current failures, excluding the environment-incident cluster(s) | `<total minus every FAILED case result inside a generic boot-failure subtask>` |
+	| Current failures, excluding the environment-incident cluster(s) | `<the total above minus every current failure whose error is a generic boot/environment signature>` |
+
+	Compute the second row by scanning the **entire current-failures pool** — every `FAILED`/`BLOCKED` case in the newer build, not only the new regressions — and subtracting each case whose error matches a generic boot/environment signature (`The build failed prior to running the test.`, an `org.apache.tools.ant.TaskAdapter` stack frame, `stop-docker-containers:`, `Failed for unknown reason`, a bare `[echo]` — the same list the **Diff** step in [`references/testray-testflow.md`](references/testray-testflow.md#diff-two-analysis-tasks) uses). Match **per case, not per subtask** — a subtask can carry a generic-sounding signature while grouping real failures, and a real test can boot-fail inside an otherwise-meaningful cluster. When the two rows are equal, that is a claim that zero current failures are boot/environment failures; verify it against the pool before publishing rather than defaulting to it.
 	| Tests fixed since the last analysis | `<count of individually-confirmed fixes>` |
 	| Issues to be claimed by the team | `<count of unattributed regressions, plus any team-member-authored ones>` |
 
@@ -150,7 +152,7 @@ Both the Confluence page body and the chat reply share this structure:
 
 1. **New regressions**, one subsection per root cause, each with: the Testray subtask badge(s), the error signature, every affected test as a link to its case result (`.../build/<newerBuildId>/case-result/<caseResultId>`), and — only when a roster-authored commit was found — the commit table (SHA, author, date, message) and the **team-caused** verdict. When no roster-authored commit was found, state that plainly instead of a commit table. Case-result links are stable, but subtask-badge links are not — re-resolve every subtask ID linked anywhere in the report (here, and in **Carried Forward From Past Analyses** and **Past Tasks Abandoned**) right before publishing, immediately before this step, rather than reusing IDs resolved earlier in the run. See [`references/testray-testflow.md`](references/testray-testflow.md#regeneration-can-be-triggered-by-anyone-at-any-time).
 
-1. **Environment incident**, listing the boot-failure subtask(s) and their test counts, explicitly excluded from commit attribution. State plainly when there is none this round.
+1. **Environment incident**, listing the boot-failure subtask(s) and their test counts, explicitly excluded from commit attribution. Identify these by scanning the whole current-failures pool for the generic boot/environment signatures listed under the summary table's second row (per case, not per subtask) — the same set that row subtracts, so the two always agree. State plainly when there is none this round, but only after that scan comes back empty — never assume none without checking.
 
 1. **Issues to be claimed**, the unattributed or team-caused regressions, so the team has a concrete pickup list.
 
