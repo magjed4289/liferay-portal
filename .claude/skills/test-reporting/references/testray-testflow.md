@@ -301,6 +301,20 @@ curl --request POST \
 	--url "https://liferay.atlassian.net/rest/api/3/issue/<ticketKey>/comment"
 ```
 
+## Match Adjacent-Task Subtasks First
+
+Before the broader historical sweep below, compare `<previousTaskId>`'s subtasks against `<newTaskId>`'s subtasks directly, at the subtask level — this catches the common case (a recurring failure triaged on the immediately-prior task) more cheaply and more completely than any status-filtered search:
+
+1. Fetch and dedupe both tasks' subtasks (same dedupe-by-name-keep-highest-id rule as everywhere else).
+
+1. For every `<previousTaskId>` subtask with a non-empty `issues` field — regardless of its `dueStatus` — resolve its member case IDs.
+
+1. For each, find the `<newTaskId>` subtask sharing the same (or materially overlapping) case-ID membership. Case ID is the reliable signal here; matching by error text alone can miss a match once the error message has drifted slightly between builds.
+
+1. When a match is found and the new subtask doesn't already carry its own fresh `issues`/`userId` this cycle, sync forward exactly as described in **Carry Forward Subtask Claims Across Analysis Tasks** below.
+
+Why this step exists: a subtask's manual triage very often ends at `dueStatus: COMPLETE` (the analyst filed a ticket and considers their part done), not `INANALYSIS`. Confirmed live: three separate `COMPLETE`-status subtasks on one previous task (one tagged LPD-100532, one tagged both LPD-100552 and LPD-100572, one tagged LPD-100596) were invisible to a `status=INANALYSIS`-only search and were found only by this direct comparison — one of them alone covered 15 member tests, all silently un-ticketed on the new task despite the underlying bug already being reported and still open. Checking one adjacent task's full subtask list regardless of status is cheap (a few dozen to ~100 subtasks, one page of calls); doing that for every task in Testray's history is not — that cost/coverage tradeoff is exactly why this step is scoped to `<previousTaskId>` alone, with the broader multi-task sweep below handling anything older.
+
 ## Carry Forward Subtask Claims Across Analysis Tasks
 
 Testray generates a fresh set of subtasks every time a new Analysis Task is created for the same routine, but a subtask's triage state — `dueStatus`, `issues` (Jira keys), assignee — belongs to that one task and does not carry over. Manual work already done on a past task (someone set `INANALYSIS`, attached an LPD ticket, assigned themselves) looks lost on the next task's corresponding subtask unless it is deliberately copied forward.
@@ -329,7 +343,7 @@ curl --request PATCH \
 
 ### Finding Historical Claims Cheaply
 
-The subtask list endpoint is not limited to one task — omit `testrayTaskId` and filter by `testrayTeamIds`/`status`/`issues` instead to search every historical task in a single call:
+The subtask list endpoint is not limited to one task — omit `testrayTaskId` and filter by `testrayTeamIds`/`status`/`issues` instead to search every historical task in a single call. The endpoint takes one `status` value at a time, so query once for `INANALYSIS` and once for `COMPLETE` — the two states a human actually leaves a triaged subtask at — and merge the results; a search scoped to `INANALYSIS` alone silently misses every claim someone marked `COMPLETE` after filing its ticket:
 
 ```bash
 curl \
@@ -342,7 +356,7 @@ curl \
 	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-testflow/testray-subtask"
 ```
 
-This is far cheaper than walking every past build/task to find its subtasks one at a time — in practice it returned every `INANALYSIS` Headless subtask in Testray's entire history (dozens, not hundreds) in one page.
+Repeat with `status=COMPLETE` and merge. This is far cheaper than walking every past build/task to find its subtasks one at a time — in practice it returned every `INANALYSIS`/`COMPLETE` Headless subtask in Testray's entire history (dozens, not hundreds) in one page each.
 
 ### Matching a Claim to the Current Task
 
@@ -366,6 +380,56 @@ curl \
 ### A Task with No Claims at All Is a Separate, Simpler Case
 
 The claim search above only ever surfaces tasks that have at least one `INANALYSIS` subtask somewhere — a task where every subtask is still sitting at the auto-generated `OPEN`, untouched by anyone, never appears as a candidate and so never gets checked for abandonment by the logic above. That's a real gap, not a non-issue: confirmed live on task `500153871` (98 subtasks, all `OPEN`, zero with any assignee or `issues`) — a fully-untouched task that the claim-matching path would have ignored forever. There is nothing on a task like this to lose, so it doesn't need the case-by-case completeness check at all: fetch its subtasks, and if none carry `status: INANALYSIS`, abandon it directly. `<previousTaskId>` is the one task worth checking this way on every run, since it's the one this run's diff just used as the baseline and is now superseded — do not extend the same sweep to older tasks beyond it.
+
+## Check Whether a Carried-Forward Fix Already Landed
+
+A carried-forward cluster (from **Match Adjacent-Task Subtasks First** or **Carry Forward Subtask Claims Across Analysis Tasks**) already has a ticket attached, but the ticket alone doesn't say whether its fix is actually in the build the report is looking at. Distinguishing "still waiting on the fix" from "the fix should be in this build already and the test still fails" needs two checks per carried-forward cluster: find the real PR, then find its real merge status — neither of which any single state field (Jira's ticket status, Jira's dev-status, or GitHub's own PR state) answers reliably for this project on its own. Run this for **every** carried-forward cluster, including one whose ticket's own top-level status looks untouched (`In Progress`/`Open`) — confirmed live: a ticket sitting at `In Progress` was nearly reported as "no PR yet" when its Technical Task subtask was actually `Closed` with an already-merged fix. The parent ticket's own status is never a valid reason to skip this check.
+
+### Find the Real PR by Searching the Fork Directly — Jira's `dev-status` Count Can Be a False Negative
+
+Resolve the ticket's Technical Task first (parent/subtask expansion, same as **Resolve a Fixed Cluster's Ticket Lifecycle**) — commits are filed under the Technical Task's ID, not the tracking Task's. Then search `brianchandotcom/liferay-portal` directly, since this project titles every PR `<ticketId> <description>`:
+
+```bash
+gh api "search/issues?q=repo:brianchandotcom/liferay-portal+<ticketId>+in:title+type:pr" --jq '.items[] | {number, title, state}'
+```
+
+This is the primary, reliable lookup — not a fallback. Jira's `dev-status` API can be checked too for corroborating detail (`GET /rest/dev-status/1.0/issue/summary?issueId=<numericId>`, numeric ID from `GET /rest/api/3/issue/<ticketKey>?fields=id`), but **do not treat `summary.pullrequest.overall.count: 0` as proof no PR exists.** Confirmed live: a Technical Task with a real, already-merged PR still showed `count: 0` in `dev-status` — the count itself is an unreliable negative, not only the `state` field (below). Always search GitHub directly regardless of what `dev-status` reports.
+
+No PR found on GitHub either → genuinely **still waiting**, stop here.
+
+### `DECLINED`, GitHub's `merged: false`, and "This Pull Request Is Closed, but the Branch Has Unmerged Commits" Do Not Mean Rejected
+
+This project's actual contribution workflow re-applies a PR's diff as a **brand-new commit** directly on `brianchandotcom/master` (a cherry-pick, not a GitHub-native merge), then closes the original PR. Because the new commit has a different SHA and different parent than the original branch's own commit, every state field git/GitHub can offer reports it as unmerged, even though the change genuinely landed:
+
+- GitHub PR: `merged: false`, state `closed`.
+- Jira dev-status: `state: "DECLINED"`.
+- GitHub's own PR page banner: "This pull request is closed, but the `<branch>` branch has unmerged commits" — this is checking literal git ancestry (is the branch's own commit SHA reachable from master?) and is technically correct, but does not mean the change was rejected. It means the change was re-committed rather than merged as-is.
+
+Confirmed live on 4 separate PRs across two investigations, all actually landed despite every one of these signals saying otherwise. The reliable tell is an issue-level comment from the merge bot:
+
+```bash
+gh api repos/<owner>/<repo>/issues/<prNumber>/comments --jq '.[] | {user: .user.login, body, created_at}'
+```
+
+A comment reading `Merged. Thank you.` followed by a `https://github.com/<owner>/<repo>/compare/<beforeSha>...<afterSha>` link is the real, authoritative signal. The commit(s) in that compare range are what actually landed — not the PR branch's own head commit, and not comparable by tree SHA either (the tree differs because the parent commit differs; comparing full trees will look like a mismatch even for an identical change). To confirm the applied commit really is the same change as the original PR, compare their **patches**, not their trees:
+
+```bash
+gh api repos/<headOwner>/<headRepo>/commits/<prHeadSha> --jq '.files[] | {filename, patch}'
+gh api repos/<owner>/<repo>/commits/<appliedSha> --jq '.files[] | {filename, patch}'
+```
+
+Identical `filename`/`patch` pairs across both confirms it's the same change, just re-committed. No "Merged. Thank you." comment on the PR at all → it really was declined/closed without merging → **still waiting**, stop here.
+
+### Confirm Ancestry Against the Analyzed Build, Not Just "Currently in Some Branch"
+
+Once the real applied commit is in hand (from the compare link above, not the PR's own head commit), check whether it landed before the specific build this run analyzed — not merely whether it exists somewhere in history today. Fetch the fork remote first if the commit isn't already present locally (`git fetch <forkRemote> master`):
+
+```bash
+git merge-base --is-ancestor <appliedCommitSha> <newerBuildSha> && echo "ancestor" || echo "not an ancestor"
+```
+
+- **Ancestor** → the fix was already present when this build ran, and the test still failed anyway. Flag the cluster **needs re-investigation**, distinct from every other still-waiting cluster — this is the one case the team should look at again, not just wait on.
+- **Not an ancestor** → confirm separately whether the commit is at least an ancestor of the fork's own current tip (`git merge-base --is-ancestor <appliedCommitSha> <forkRemote>/master`) to state the finding precisely: merged into the fork but not yet synced to the `liferay/liferay-portal` upstream this build ran against → **still waiting on the sync**, not a failure of the fix, and explicitly not the "declined" the raw state fields implied.
 
 ## URL Patterns
 
