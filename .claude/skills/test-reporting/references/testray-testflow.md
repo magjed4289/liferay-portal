@@ -21,6 +21,8 @@ export ACCESS_TOKEN=$(curl \
 	| grep -o '"access_token":"[^"]*"' | sed 's/.*:"//;s/"//')
 ```
 
+**The token expires well within a single run's lifetime** — confirmed live, a run needed re-minting this token roughly every 30-45 minutes of wall-clock time, and the historical sweep in **Finding Historical Claims Cheaply** alone can take that long. A call failing with `401` mid-run is an expired token, not a real error: re-run the mint command above and retry, rather than treating it as a data problem.
+
 ## Resolve the Team Routine
 
 Use the canonical master project ID `35392` as `<masterProjectId>` (browsable at `https://testray.liferay.com/#/project/35392/routines`). Derive the team routine from `.github/CODEOWNERS` exactly as in [`../../test-fix/references/testray.md`](../../test-fix/references/testray.md#resolve-a-test-name-to-a-case-result-id) — a routine is named `[master] ci:test:<team>`. For the Headless team this resolves to `[master] ci:test:headless`, routine ID `994140`. Resolve it fresh each run rather than hardcoding, in case Testray re-creates the routine:
@@ -331,6 +333,20 @@ curl --request PUT \
 	--url "https://testray.liferay.com/o/c/subtasks/<subtaskId>"
 ```
 
+**Use the subtask-level write only when the match itself was made at the subtask level with 1:1 confidence** (this is what **Match Adjacent-Task Subtasks** does — the whole subtask's membership was directly compared). **Do not use it for a claim found via the reverse case-ID lookup in Matching a Claim to the Current Task** — that match is only ever about *one specific test*, and a subtask can cluster several unrelated tests together; writing the subtask's own `dueStatus` would overstate a single-case claim to the whole cluster. For that case, write the individual case result instead:
+
+**Case result** (`o/c/caseresults/{id}`, generic object endpoint, `PUT`) — same `dueStatus`/`issues` shape, but scoped to one test's one result in one build. This is also the mechanism `TestrayAutomatedTasks`'s own `assign_issue_to_case_result_batch` (`utils/liferay_utils/testray_utils/testray_api.py`) uses, and it matches how `issues` is normally populated on a case result in the first place (see **Check Case History for a Linked Jira Issue** above — "a tester manually marked `BLOCKED` while citing a known ticket"):
+
+```bash
+curl --request PUT \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--header "Content-Type: application/json" \
+	--data '{"dueStatus": {"key": "BLOCKED", "name": "Blocked"}, "issues": "LPD-XXXXX"}' \
+	--url "https://testray.liferay.com/o/c/caseresults/<caseResultId>"
+```
+
+**Neither write is safe to make before the verdict in Check Whether a Carried-Forward Fix Already Landed is known.** A currently-failing test must never be left showing `COMPLETE` (subtask) or `BLOCKED` (case result) — both read as "handled, nothing more to do" — when the real finding is **Requires attention** (the fix already merged into the analyzed build and the test is still failing anyway). Confirmed live: a claim was written as `COMPLETE` on four subtasks before the merge-status check ran, then had to be reverted once the check came back **Requires attention** instead of the assumed **Still waiting**. Resolve the verdict for a candidate *before* writing anything for it wherever the workflow allows; where the write already happened, revert it (back to the case result's/subtask's original `dueStatus` and blank `issues`) the moment the verdict comes back **Requires attention**. Only a **Still waiting** verdict gets the case-result-level `BLOCKED` + `issues` write — a **Requires attention** verdict gets no Testray write at all; it is reported, not recorded as a field.
+
 **Task** (`o/c/tasks/{id}`, generic object endpoint, `PATCH`) — a *separate* picklist from the subtask's own: `OPEN`, `INANALYSIS`, `PROCESSING`, `COMPLETE`, `ABANDONED`. Nothing server-side gates a task's status on its subtasks' states — that's purely a convention other tooling follows, not an actual constraint, so a direct abandon is safe once the completeness check below passes:
 
 ```bash
@@ -356,11 +372,37 @@ curl \
 	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-testflow/testray-subtask"
 ```
 
-Repeat with `status=COMPLETE` and merge. This is far cheaper than walking every past build/task to find its subtasks one at a time — in practice it returned every `INANALYSIS`/`COMPLETE` Headless subtask in Testray's entire history (dozens, not hundreds) in one page each.
+Repeat with `status=COMPLETE` and merge. This is far cheaper than walking every past build/task to find its subtasks one at a time. **The volume grows with the routine's age, and can be much larger than expected**: confirmed live on a routine running since 2024, this pair of calls returned 9,857 rows, not the "dozens" once observed on a younger routine — do not assume this stays small.
+
+Two cheap filters bring that back down before any expensive per-candidate work:
+
+1. **Drop rows with an empty `issues` field** — no ticket, nothing to carry forward.
+
+1. **Batch-check the surviving tickets' Jira status and drop any row whose ticket(s) are all Closed.** Collect every distinct ticket key across all surviving rows, then query in batches of 100 via `jql=key in (KEY1,KEY2,...)`. **Use `GET /rest/api/3/search/jql`, not the older `/rest/api/3/search`** — the latter now returns `410 Gone` ("migrate to /rest/api/3/search/jql"):
+
+	```bash
+	curl \
+		--get \
+		--data-urlencode "jql=key in (LPD-11111,LPD-22222,...)" \
+		--data-urlencode "fields=status" \
+		--data-urlencode "maxResults=100" \
+		--user "${JIRA_API_USER}:${JIRA_API_TOKEN}" \
+		--url "https://liferay.atlassian.net/rest/api/3/search/jql"
+	```
+
+	Confirmed live: even after both filters, a two-year-old routine still left **2,437 surviving rows** behind ~1,943 distinct tickets — two orders of magnitude past "dozens, not hundreds." Do not stop at recency or ticket-status alone; the next section's error-text gate is what actually brings this down to something worth writing.
+
+### An Abandoned Source Task Is Not a Staleness Signal
+
+Do not use a candidate row's parent task's own `dueStatus` (e.g. `ABANDONED`) to judge whether the row is stale or worth trusting. Abandoning a task is this skill's own routine housekeeping — see **Carry Forward Subtask Claims Across Analysis Tasks** below — it happens automatically once every live claim on that task has been confirmed migrated forward or resolved. A claim that has been successfully relayed through several generations of tasks will, by design, end up sitting on a now-`ABANDONED` source task; that is the *normal*, healthy outcome for a claim this skill has been correctly tracking, not evidence that the claim itself is dead. Judge a candidate's relevance by its ticket's own Jira status and (see below) whether its error text still matches — never by its parent task's lifecycle state.
 
 ### Matching a Claim to the Current Task
 
 Subtask IDs never carry across tasks and error-signature text can drift, so match by **case ID** (the stable test identity), not by subtask ID or name: resolve a candidate subtask's member case IDs the same way as anywhere else in this doc (`r_subtaskToCaseResults_c_subtaskId` filter), and check whether any of them are also a member of a subtask in the task being updated.
+
+**At the scale confirmed above (thousands of surviving candidates), resolving each candidate subtask's membership one at a time is itself too expensive.** Reverse the lookup instead: for each case ID currently failing in `<newTaskId>`'s build (there are only as many of these as there are current failures, typically under 150), query `/o/c/caseresults` filtered by `r_caseToCaseResult_c_caseId eq '<caseId>'` alone (no build filter) — every case-result row carries its own `r_subtaskToCaseResults_c_subtaskId` directly, so one call per currently-failing case ID reveals every historical subtask that test has ever belonged to. Intersect those subtask IDs against the surviving-candidates set from above. This is the same answer as resolving every candidate's membership, at a small fraction of the calls, because it only ever asks about tests that matter *right now*.
+
+**Case-ID membership alone is not enough — require the error text to substantially match too.** A chronically-flaky test can rack up dozens of tickets over its history, each for a *different* underlying failure; matching by case ID alone will happily attach a ticket from an unrelated failure eighteen months ago onto today's completely different error. Confirmed live: of 27 non-duplicate case-ID matches found this way, 17 had error text that shared nothing with today's failure (different exception class, different locator, different assertion) — only 10 were the same recurring bug. Before trusting a match, normalize both the candidate's recorded `error` and today's `error` (strip `:\d+:\d+` line:column references, since those drift harmlessly on refactors) and require them to be equal. Treat a normalized mismatch as no match at all — do not carry it forward, and do not fall back to a fuzzy/partial comparison.
 
 ### Before Abandoning a Source Task, Verify — Don't Infer — Every Case Is Accounted For
 
@@ -428,8 +470,8 @@ Once the real applied commit is in hand (from the compare link above, not the PR
 git merge-base --is-ancestor <appliedCommitSha> <newerBuildSha> && echo "ancestor" || echo "not an ancestor"
 ```
 
-- **Ancestor** → the fix was already present when this build ran, and the test still failed anyway. Flag the cluster **needs re-investigation**, distinct from every other still-waiting cluster — this is the one case the team should look at again, not just wait on.
-- **Not an ancestor** → confirm separately whether the commit is at least an ancestor of the fork's own current tip (`git merge-base --is-ancestor <appliedCommitSha> <forkRemote>/master`) to state the finding precisely: merged into the fork but not yet synced to the `liferay/liferay-portal` upstream this build ran against → **still waiting on the sync**, not a failure of the fix, and explicitly not the "declined" the raw state fields implied.
+- **Ancestor** → the fix was already present when this build ran, and the test still failed anyway. Flag the cluster **needs re-investigation**, distinct from every other still-waiting cluster — this is the one case the team should look at again, not just wait on. **Do not write anything to Testray for this claim** — no subtask `COMPLETE`, no case-result `BLOCKED` — leave the case result exactly at its real `FAILED` status. Writing a resolved-looking field here would suppress the one signal that says the existing fix didn't actually work; if a write already happened before this verdict was known, revert it now.
+- **Not an ancestor** → confirm separately whether the commit is at least an ancestor of the fork's own current tip (`git merge-base --is-ancestor <appliedCommitSha> <forkRemote>/master`) to state the finding precisely: merged into the fork but not yet synced to the `liferay/liferay-portal` upstream this build ran against → **still waiting on the sync**, not a failure of the fix, and explicitly not the "declined" the raw state fields implied. This is the one verdict that gets the case-result-level `BLOCKED` + `issues` write from **Writable Fields** above.
 
 ## URL Patterns
 
