@@ -184,6 +184,20 @@ Some resolved names are not real tests — filter them out before reporting:
 - `Top Level Build`.
 - `PortalLogAssertorTest-<slot>` (log assertors, not test cases).
 
+## Resolve a Subtask's Component(s)
+
+A case result carries a component reference — the product area the test belongs to (e.g. `Staging`, `API Builder`, `Site Templates`), useful for the report as a more actionable signal than raw error text (the error is one click away via the subtask badge; which part of the product is affected is not). Two calls, one per case result and one to resolve the ID to a name:
+
+```bash
+curl --get --header "Accept: application/json" --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/caseresults/<caseResultId>?fields=r_componentToCaseResult_c_componentId"
+
+curl --get --header "Accept: application/json" --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/components/<componentId>?fields=name"
+```
+
+Resolve every member of a subtask, not just one representative — confirmed live, members of the same subtask consistently shared one component, but a subtask is Testray's cluster by *error signature*, not by component, so nothing guarantees that holds. List every distinct name found; do not assume uniformity and resolve only one member.
+
 ## Diff Two Analysis Tasks
 
 1. Fetch and dedupe both tasks' subtasks (see regeneration quirk above).
@@ -472,6 +486,53 @@ git merge-base --is-ancestor <appliedCommitSha> <newerBuildSha> && echo "ancesto
 
 - **Ancestor** → the fix was already present when this build ran, and the test still failed anyway. Flag the cluster **needs re-investigation**, distinct from every other still-waiting cluster — this is the one case the team should look at again, not just wait on. **Do not write anything to Testray for this claim** — no subtask `COMPLETE`, no case-result `BLOCKED` — leave the case result exactly at its real `FAILED` status. Writing a resolved-looking field here would suppress the one signal that says the existing fix didn't actually work; if a write already happened before this verdict was known, revert it now.
 - **Not an ancestor** → confirm separately whether the commit is at least an ancestor of the fork's own current tip (`git merge-base --is-ancestor <appliedCommitSha> <forkRemote>/master`) to state the finding precisely: merged into the fork but not yet synced to the `liferay/liferay-portal` upstream this build ran against → **still waiting on the sync**, not a failure of the fix, and explicitly not the "declined" the raw state fields implied. This is the one verdict that gets the case-result-level `BLOCKED` + `issues` write from **Writable Fields** above.
+
+## Cross-Check Against the Acceptance Routine
+
+A test failing in both the team's own `ci:test:headless` routine *and* the shared `EE Development Acceptance (master)` routine (a release-gating routine every team's code runs through, not just Headless's) is higher priority than one failing only in the team's own daily routine — the Acceptance failure has direct release-blocking weight. This is a priority signal only, not a new diffing pass: run it once per report, against the already-resolved set of currently-reported cases (every **New Regression** and every **Carried Forward** cluster's member case IDs), not the whole current-failures pool.
+
+**Routine ID `590307`.** Confirmed live: two routines share the exact name `EE Development Acceptance (master)` (`590307` and `361124208`) — `590307` is the one already referenced elsewhere as the umbrella build containing every team's results. Do not assume this stays the only duplicate; if a future run finds the name resolves to more than two IDs or `590307` looks stale (no recent builds), stop and surface it rather than guessing.
+
+### Resolve the Freshest Acceptance Build
+
+Same pattern as **Find the Freshest `DONE` Build** above, scoped to routine `590307`:
+
+```bash
+curl \
+	--data-urlencode "filter=r_routineToBuilds_c_routineId eq '590307'" \
+	--data-urlencode "sort=dateCreated:desc" \
+	--data-urlencode "pageSize=5" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/builds"
+```
+
+Walk newest-first for the first `DONE` build, same as the team-routine build resolution. Note its `id` as `<acceptanceBuildId>` and its `gitHash` as `<acceptanceBuildSha>`.
+
+### Check Each Case Against That One Build
+
+For each case ID being reported, one direct call — no paging, no case-history walk:
+
+```bash
+curl \
+	--data-urlencode "filter=r_caseToCaseResult_c_caseId eq '<caseId>' and r_buildToCaseResult_c_buildId eq '<acceptanceBuildId>'" \
+	--get \
+	--header "Accept: application/json" \
+	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
+	--url "https://testray.liferay.com/o/c/caseresults"
+```
+
+This is far cheaper than paging `testray-case-result-history/<caseId>` and filtering client-side for `testrayRoutineId` (the approach [`../../test-fix/references/testray.md`](../../test-fix/references/testray.md) uses for a different purpose) — that endpoint has no server-side routine filter and a single case can carry thousands of history rows across every routine it has ever run in. Scoping directly to one known build ID answers "did Acceptance run this test just now, and what happened" in one call.
+
+Read the result:
+
+- **No item returned** → this test wasn't part of Acceptance's selection for this build. No signal either way.
+- **`dueStatus.key` is `UNTESTED`** → the test was selected but not actually executed this run (confirmed live: this happens routinely). Treat identically to "not returned" — no signal, not a false negative.
+- **`dueStatus.key` is `FAILED` or `BLOCKED`** → failing in both routines. This is the priority signal — tag it.
+- **`dueStatus.key` is `PASSED`** → compare `<acceptanceBuildSha>` against the `ci:test:headless` build being analyzed (`<newTaskId>`'s build SHA): if the Acceptance build's commit is a strict descendant of it (`git merge-base --is-ancestor <newTaskIdBuildSha> <acceptanceBuildSha>`), Acceptance already tested a newer commit and passed — note this as "may already be fixed," distinct from the priority tag. If the Acceptance build is the same commit or not a descendant, there is nothing new to say — no tag.
+
+Confirmed live on one full run: of 24 currently-reported cases checked, none came back `FAILED`/`BLOCKED` in Acceptance — most weren't part of Acceptance's selection at all, and the few that were came back `UNTESTED`. A report with zero Acceptance tags this round is a real, checkable outcome, not a sign the check didn't run — show the tally (checked vs. flagged), the same way **Still Failing, Error Changed** shows its numerator/denominator instead of a bare claim.
 
 ## URL Patterns
 
