@@ -21,7 +21,7 @@ export ACCESS_TOKEN=$(curl \
 	| grep -o '"access_token":"[^"]*"' | sed 's/.*:"//;s/"//')
 ```
 
-**The token expires well within a single run's lifetime** — confirmed live, a run needed re-minting this token roughly every 30-45 minutes of wall-clock time, and the historical sweep in **Finding Historical Claims Cheaply** alone can take that long. A call failing with `401` mid-run is an expired token, not a real error: re-run the mint command above and retry, rather than treating it as a data problem.
+**The token expires well within a single run's lifetime** — confirmed live, a run needed re-minting this token roughly every 30-45 minutes of wall-clock time. A call failing with `401` mid-run is an expired token, not a real error: re-run the mint command above and retry, rather than treating it as a data problem.
 
 ## Resolve the Team Routine
 
@@ -319,7 +319,7 @@ curl --request POST \
 
 ## Match Adjacent-Task Subtasks First
 
-Before the broader historical sweep below, compare `<previousTaskId>`'s subtasks against `<newTaskId>`'s subtasks directly, at the subtask level — this catches the common case (a recurring failure triaged on the immediately-prior task) more cheaply and more completely than any status-filtered search:
+Compare `<previousTaskId>`'s subtasks against `<newTaskId>`'s subtasks directly, at the subtask level — this catches the common case (a recurring failure triaged on the immediately-prior task) more cheaply and more completely than any status-filtered search. This is the skill's only carry-forward mechanism; a broader sweep across the routine's entire history was tried and dropped — on a two-year-old routine it meant paging through ~9,800 historical subtasks and cross-checking ~2,400 of them against Jira just to catch a handful of claims sitting on a task older than `<previousTaskId>`, far more cost than the extra coverage was worth:
 
 1. Fetch and dedupe both tasks' subtasks (same dedupe-by-name-keep-highest-id rule as everywhere else).
 
@@ -329,7 +329,7 @@ Before the broader historical sweep below, compare `<previousTaskId>`'s subtasks
 
 1. When a match is found and the new subtask doesn't already carry its own fresh `issues`/`userId` this cycle, sync forward exactly as described in **Carry Forward Subtask Claims Across Analysis Tasks** below.
 
-Why this step exists: a subtask's manual triage very often ends at `dueStatus: COMPLETE` (the analyst filed a ticket and considers their part done), not `INANALYSIS`. Confirmed live: three separate `COMPLETE`-status subtasks on one previous task (one tagged LPD-100532, one tagged both LPD-100552 and LPD-100572, one tagged LPD-100596) were invisible to a `status=INANALYSIS`-only search and were found only by this direct comparison — one of them alone covered 15 member tests, all silently un-ticketed on the new task despite the underlying bug already being reported and still open. Checking one adjacent task's full subtask list regardless of status is cheap (a few dozen to ~100 subtasks, one page of calls); doing that for every task in Testray's history is not — that cost/coverage tradeoff is exactly why this step is scoped to `<previousTaskId>` alone, with the broader multi-task sweep below handling anything older.
+Why this step exists: a subtask's manual triage very often ends at `dueStatus: COMPLETE` (the analyst filed a ticket and considers their part done), not `INANALYSIS`. Confirmed live: three separate `COMPLETE`-status subtasks on one previous task (one tagged LPD-100532, one tagged both LPD-100552 and LPD-100572, one tagged LPD-100596) were invisible to a `status=INANALYSIS`-only search and were found only by this direct comparison — one of them alone covered 15 member tests, all silently un-ticketed on the new task despite the underlying bug already being reported and still open. Checking one adjacent task's full subtask list regardless of status is cheap (a few dozen to ~100 subtasks, one page of calls); doing that for every task in Testray's history is not — that cost/coverage tradeoff is exactly why this step is scoped to `<previousTaskId>` alone, with no broader sweep behind it.
 
 ## Carry Forward Subtask Claims Across Analysis Tasks
 
@@ -347,19 +347,9 @@ curl --request PUT \
 	--url "https://testray.liferay.com/o/c/subtasks/<subtaskId>"
 ```
 
-**Use the subtask-level write only when the match itself was made at the subtask level with 1:1 confidence** (this is what **Match Adjacent-Task Subtasks** does — the whole subtask's membership was directly compared). **Do not use it for a claim found via the reverse case-ID lookup in Matching a Claim to the Current Task** — that match is only ever about *one specific test*, and a subtask can cluster several unrelated tests together; writing the subtask's own `dueStatus` would overstate a single-case claim to the whole cluster. For that case, write the individual case result instead:
+The subtask-level write is safe here because the match is always made at the subtask level with 1:1 confidence (**Match Adjacent-Task Subtasks** compares whole-subtask membership directly) — there is no case-ID-only carry-forward path in this skill, so a subtask's own `dueStatus`/`issues` is never overstated onto unrelated member tests.
 
-**Case result** (`o/c/caseresults/{id}`, generic object endpoint, `PUT`) — same `dueStatus`/`issues` shape, but scoped to one test's one result in one build. This is also the mechanism `TestrayAutomatedTasks`'s own `assign_issue_to_case_result_batch` (`utils/liferay_utils/testray_utils/testray_api.py`) uses, and it matches how `issues` is normally populated on a case result in the first place (see **Check Case History for a Linked Jira Issue** above — "a tester manually marked `BLOCKED` while citing a known ticket"):
-
-```bash
-curl --request PUT \
-	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
-	--header "Content-Type: application/json" \
-	--data '{"dueStatus": {"key": "BLOCKED", "name": "Blocked"}, "issues": "LPD-XXXXX"}' \
-	--url "https://testray.liferay.com/o/c/caseresults/<caseResultId>"
-```
-
-**Neither write is safe to make before the verdict in Check Whether a Carried-Forward Fix Already Landed is known.** A currently-failing test must never be left showing `COMPLETE` (subtask) or `BLOCKED` (case result) — both read as "handled, nothing more to do" — when the real finding is **Requires attention** (the fix already merged into the analyzed build and the test is still failing anyway). Confirmed live: a claim was written as `COMPLETE` on four subtasks before the merge-status check ran, then had to be reverted once the check came back **Requires attention** instead of the assumed **Still waiting**. Resolve the verdict for a candidate *before* writing anything for it wherever the workflow allows; where the write already happened, revert it (back to the case result's/subtask's original `dueStatus` and blank `issues`) the moment the verdict comes back **Requires attention**. Only a **Still waiting** verdict gets the case-result-level `BLOCKED` + `issues` write — a **Requires attention** verdict gets no Testray write at all; it is reported, not recorded as a field.
+**Neither this write, nor abandoning the source task below, is safe to make before the verdict in Check Whether a Carried-Forward Fix Already Landed is known.** A currently-failing test must never be left showing `COMPLETE` — that reads as "handled, nothing more to do" — when the real finding is **Requires attention** (the fix already merged into the analyzed build and the test is still failing anyway). Confirmed live: a claim was written as `COMPLETE` on four subtasks before the merge-status check ran, then had to be reverted once the check came back **Requires attention** instead of the assumed **Still waiting**. Resolve the verdict for a candidate *before* writing anything for it wherever the workflow allows; where the write already happened, revert it (back to the subtask's original `dueStatus` and blank `issues`) the moment the verdict comes back **Requires attention**.
 
 **Task** (`o/c/tasks/{id}`, generic object endpoint, `PATCH`) — a *separate* picklist from the subtask's own: `OPEN`, `INANALYSIS`, `PROCESSING`, `COMPLETE`, `ABANDONED`. Nothing server-side gates a task's status on its subtasks' states — that's purely a convention other tooling follows, not an actual constraint, so a direct abandon is safe once the completeness check below passes:
 
@@ -370,53 +360,6 @@ curl --request PATCH \
 	--data '{"dueStatus": {"key": "ABANDONED", "name": "Abandoned"}}' \
 	--url "https://testray.liferay.com/o/c/tasks/<taskId>"
 ```
-
-### Finding Historical Claims Cheaply
-
-The subtask list endpoint is not limited to one task — omit `testrayTaskId` and filter by `testrayTeamIds`/`status`/`issues` instead to search every historical task in a single call. The endpoint takes one `status` value at a time, so query once for `INANALYSIS` and once for `COMPLETE` — the two states a human actually leaves a triaged subtask at — and merge the results; a search scoped to `INANALYSIS` alone silently misses every claim someone marked `COMPLETE` after filing its ticket:
-
-```bash
-curl \
-	--data-urlencode "testrayTeamIds=<teamId>" \
-	--data-urlencode "status=INANALYSIS" \
-	--data-urlencode "pageSize=200" \
-	--get \
-	--header "Accept: application/json" \
-	--header "Authorization: Bearer ${ACCESS_TOKEN}" \
-	--url "https://testray.liferay.com/o/testray-rest/v1.0/testray-testflow/testray-subtask"
-```
-
-Repeat with `status=COMPLETE` and merge. This is far cheaper than walking every past build/task to find its subtasks one at a time. **The volume grows with the routine's age, and can be much larger than expected**: confirmed live on a routine running since 2024, this pair of calls returned 9,857 rows, not the "dozens" once observed on a younger routine — do not assume this stays small.
-
-Two cheap filters bring that back down before any expensive per-candidate work:
-
-1. **Drop rows with an empty `issues` field** — no ticket, nothing to carry forward.
-
-1. **Batch-check the surviving tickets' Jira status and drop any row whose ticket(s) are all Closed.** Collect every distinct ticket key across all surviving rows, then query in batches of 100 via `jql=key in (KEY1,KEY2,...)`. **Use `GET /rest/api/3/search/jql`, not the older `/rest/api/3/search`** — the latter now returns `410 Gone` ("migrate to /rest/api/3/search/jql"):
-
-	```bash
-	curl \
-		--get \
-		--data-urlencode "jql=key in (LPD-11111,LPD-22222,...)" \
-		--data-urlencode "fields=status" \
-		--data-urlencode "maxResults=100" \
-		--user "${JIRA_API_USER}:${JIRA_API_TOKEN}" \
-		--url "https://liferay.atlassian.net/rest/api/3/search/jql"
-	```
-
-	Confirmed live: even after both filters, a two-year-old routine still left **2,437 surviving rows** behind ~1,943 distinct tickets — two orders of magnitude past "dozens, not hundreds." Do not stop at recency or ticket-status alone; the next section's error-text gate is what actually brings this down to something worth writing.
-
-### An Abandoned Source Task Is Not a Staleness Signal
-
-Do not use a candidate row's parent task's own `dueStatus` (e.g. `ABANDONED`) to judge whether the row is stale or worth trusting. Abandoning a task is this skill's own routine housekeeping — see **Carry Forward Subtask Claims Across Analysis Tasks** below — it happens automatically once every live claim on that task has been confirmed migrated forward or resolved. A claim that has been successfully relayed through several generations of tasks will, by design, end up sitting on a now-`ABANDONED` source task; that is the *normal*, healthy outcome for a claim this skill has been correctly tracking, not evidence that the claim itself is dead. Judge a candidate's relevance by its ticket's own Jira status and (see below) whether its error text still matches — never by its parent task's lifecycle state.
-
-### Matching a Claim to the Current Task
-
-Subtask IDs never carry across tasks and error-signature text can drift, so match by **case ID** (the stable test identity), not by subtask ID or name: resolve a candidate subtask's member case IDs the same way as anywhere else in this doc (`r_subtaskToCaseResults_c_subtaskId` filter), and check whether any of them are also a member of a subtask in the task being updated.
-
-**At the scale confirmed above (thousands of surviving candidates), resolving each candidate subtask's membership one at a time is itself too expensive.** Reverse the lookup instead: for each case ID currently failing in `<newTaskId>`'s build (there are only as many of these as there are current failures, typically under 150), query `/o/c/caseresults` filtered by `r_caseToCaseResult_c_caseId eq '<caseId>'` alone (no build filter) — every case-result row carries its own `r_subtaskToCaseResults_c_subtaskId` directly, so one call per currently-failing case ID reveals every historical subtask that test has ever belonged to. Intersect those subtask IDs against the surviving-candidates set from above. This is the same answer as resolving every candidate's membership, at a small fraction of the calls, because it only ever asks about tests that matter *right now*.
-
-**Case-ID membership alone is not enough — require the error text to substantially match too.** A chronically-flaky test can rack up dozens of tickets over its history, each for a *different* underlying failure; matching by case ID alone will happily attach a ticket from an unrelated failure eighteen months ago onto today's completely different error. Confirmed live: of 27 non-duplicate case-ID matches found this way, 17 had error text that shared nothing with today's failure (different exception class, different locator, different assertion) — only 10 were the same recurring bug. Before trusting a match, normalize both the candidate's recorded `error` and today's `error` (strip `:\d+:\d+` line:column references, since those drift harmlessly on refactors) and require them to be equal. Treat a normalized mismatch as no match at all — do not carry it forward, and do not fall back to a fuzzy/partial comparison.
 
 ### Before Abandoning a Source Task, Verify — Don't Infer — Every Case Is Accounted For
 
@@ -433,13 +376,11 @@ curl \
 
 `NOT_FOUND_IN_BUILD` is not `PASSED` — it means the case simply wasn't tracked in that build (an environment/shard rotation, most likely), and its status is genuinely unknown. Confirmed live: of one task's ten claimed cases, five were `PASSED` in the newer build and five came back `NOT_FOUND_IN_BUILD` — the task was correctly left un-abandoned rather than guessed at.
 
-### A Task with No Claims at All Is a Separate, Simpler Case
-
-The claim search above only ever surfaces tasks that have at least one `INANALYSIS` subtask somewhere — a task where every subtask is still sitting at the auto-generated `OPEN`, untouched by anyone, never appears as a candidate and so never gets checked for abandonment by the logic above. That's a real gap, not a non-issue: confirmed live on task `500153871` (98 subtasks, all `OPEN`, zero with any assignee or `issues`) — a fully-untouched task that the claim-matching path would have ignored forever. There is nothing on a task like this to lose, so it doesn't need the case-by-case completeness check at all: fetch its subtasks, and if none carry `status: INANALYSIS`, abandon it directly. `<previousTaskId>` is the one task worth checking this way on every run, since it's the one this run's diff just used as the baseline and is now superseded — do not extend the same sweep to older tasks beyond it.
+Since **Match Adjacent-Task Subtasks First** already fetches every one of `<previousTaskId>`'s subtasks unfiltered by status, a task where nothing was ever ticketed (confirmed live on task `500153871`: 98 subtasks, all `OPEN`, zero with any assignee or `issues`) needs no case-by-case check at all — zero ticketed subtasks trivially clears "every claim accounted for," so abandon it directly.
 
 ## Check Whether a Carried-Forward Fix Already Landed
 
-A carried-forward cluster (from **Match Adjacent-Task Subtasks First** or **Carry Forward Subtask Claims Across Analysis Tasks**) already has a ticket attached, but the ticket alone doesn't say whether its fix is actually in the build the report is looking at. Distinguishing "still waiting on the fix" from "the fix should be in this build already and the test still fails" needs two checks per carried-forward cluster: find the real PR, then find its real merge status — neither of which any single state field (Jira's ticket status, Jira's dev-status, or GitHub's own PR state) answers reliably for this project on its own. Run this for **every** carried-forward cluster, including one whose ticket's own top-level status looks untouched (`In Progress`/`Open`) — confirmed live: a ticket sitting at `In Progress` was nearly reported as "no PR yet" when its Technical Task subtask was actually `Closed` with an already-merged fix. The parent ticket's own status is never a valid reason to skip this check.
+A carried-forward cluster (from **Match Adjacent-Task Subtasks First**) already has a ticket attached, but the ticket alone doesn't say whether its fix is actually in the build the report is looking at. Distinguishing "still waiting on the fix" from "the fix should be in this build already and the test still fails" needs two checks per carried-forward cluster: find the real PR, then find its real merge status — neither of which any single state field (Jira's ticket status, Jira's dev-status, or GitHub's own PR state) answers reliably for this project on its own. Run this for **every** carried-forward cluster, including one whose ticket's own top-level status looks untouched (`In Progress`/`Open`) — confirmed live: a ticket sitting at `In Progress` was nearly reported as "no PR yet" when its Technical Task subtask was actually `Closed` with an already-merged fix. The parent ticket's own status is never a valid reason to skip this check.
 
 ### Find the Real PR by Searching the Fork Directly — Jira's `dev-status` Count Can Be a False Negative
 
