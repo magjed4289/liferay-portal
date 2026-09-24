@@ -7031,6 +7031,63 @@ public class ObjectEntryLocalServiceTest {
 	}
 
 	@Test
+	public void testLoadValuesWithStaleObjectDefinition() throws Exception {
+		ObjectDefinition objectDefinition1 =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				Collections.emptyList());
+		ObjectDefinition objectDefinition2 =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				Arrays.asList(
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_STRING, "Description",
+						"description"),
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_STRING, "Name", "name")));
+
+		ObjectRelationship objectRelationship =
+			ObjectRelationshipTestUtil.addObjectRelationship(
+				_objectRelationshipLocalService, objectDefinition1,
+				objectDefinition2);
+
+		String name = RandomTestUtil.randomString();
+
+		ObjectEntry objectEntry = _addObjectEntry(
+			objectDefinition2,
+			HashMapBuilder.<String, Serializable>put(
+				"name", name
+			).build(),
+			ServiceContextTestUtil.getServiceContext());
+
+		objectDefinition2 = _objectDefinitionLocalService.getObjectDefinition(
+			objectDefinition2.getObjectDefinitionId());
+
+		objectDefinition2.getObjectFieldBag();
+
+		_objectFieldLocalService.deleteObjectField(
+			_objectFieldLocalService.fetchObjectField(
+				objectDefinition2.getObjectDefinitionId(), "description"));
+
+		_objectRelationshipLocalService.deleteObjectRelationship(
+			objectRelationship);
+
+		List<ObjectEntry> objectEntries = Collections.singletonList(
+			_objectEntryLocalService.getObjectEntry(
+				objectEntry.getObjectEntryId()));
+
+		_objectEntryLocalService.loadValues(objectDefinition2, objectEntries);
+
+		ObjectEntry loadedObjectEntry = objectEntries.get(0);
+
+		Assert.assertEquals(
+			name, MapUtil.getString(loadedObjectEntry.getValues(), "name"));
+
+		_objectDefinitionLocalService.deleteObjectDefinition(objectDefinition2);
+		_objectDefinitionLocalService.deleteObjectDefinition(objectDefinition1);
+	}
+
+	@Test
 	public void testMoveObjectEntryToTrashWithComments() throws Exception {
 		Group group = GroupTestUtil.addGroup();
 
