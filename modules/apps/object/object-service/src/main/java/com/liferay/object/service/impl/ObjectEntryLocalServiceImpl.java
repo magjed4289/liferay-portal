@@ -1985,6 +1985,9 @@ public class ObjectEntryLocalServiceImpl
 			ObjectDefinition objectDefinition, List<ObjectEntry> objectEntries)
 		throws PortalException {
 
+		objectDefinition = _objectDefinitionPersistence.findByPrimaryKey(
+			objectDefinition.getObjectDefinitionId());
+
 		Map<ObjectDefinition, List<ObjectEntry>> relatedObjectEntriesMap =
 			_loadValues(objectDefinition, objectEntries);
 
